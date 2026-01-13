@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Infinity Tycoon – Essence Tree</title>
+<title>Infinity Tycoon – Full Systems</title>
 
 <style>
 :root{
@@ -31,7 +31,7 @@ header{
 }
 
 main{
- max-width:1000px;
+ max-width:1100px;
  margin:auto;
  padding:14px;
  display:flex;
@@ -44,6 +44,12 @@ main{
  padding:16px;
  border-radius:16px;
  box-shadow:0 10px 28px rgba(0,0,0,.4);
+ animation:appear .4s ease;
+}
+
+@keyframes appear{
+ from{opacity:0;transform:translateY(10px)}
+ to{opacity:1;transform:none}
 }
 
 .money{
@@ -63,18 +69,20 @@ button{
  font-size:16px;
  font-weight:600;
  cursor:pointer;
+ transition:.15s;
 }
 
-button:disabled{
- background:var(--locked);
- opacity:.5;
-}
+button:active{transform:scale(.96)}
+button:disabled{background:#555;opacity:.5}
+
+.locked{opacity:.4}
+.small{font-size:13px;opacity:.8}
+.green{color:var(--success)}
 
 .tree{
  display:grid;
  grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
  gap:12px;
- margin-top:10px;
 }
 
 .node{
@@ -82,25 +90,17 @@ button:disabled{
  padding:12px;
  border-radius:14px;
  text-align:center;
- transition:.2s;
-}
-
-.node.locked{
- opacity:.4;
 }
 
 .node.unlocked{
  background:linear-gradient(135deg,#3c47a7,#5b7cfa);
- box-shadow:0 0 16px rgba(91,124,250,.7);
+ box-shadow:0 0 14px rgba(91,124,250,.7);
 }
-
-.small{font-size:13px;opacity:.85}
-.hidden{display:none}
 </style>
 </head>
 
 <body>
-<header>Infinity Tycoon — ✨ Esszencia Skill Tree</header>
+<header>Infinity Tycoon</header>
 
 <main>
 
@@ -111,151 +111,132 @@ button:disabled{
 </div>
 
 <div class="card">
-<b>🏭 Épületek</b>
-<div id="buildings"></div>
+<b>🏭 Gyárak</b>
+<div id="factories"></div>
 </div>
 
-<div class="card hidden" id="essPanel">
+<div class="card" id="essPanel" style="display:none">
 <b>✨ Esszencia: <span id="essence">0</span></b>
-
 <div class="tree">
-
-<!-- IDŐ -->
-<div class="node" id="time1">
-<b>⏱ Időtorzítás I</b>
-<div class="small">x2 minden</div>
-<button onclick="buySkill('time1')">1 ✨</button>
+ <div class="node" id="s1"><b>⏱ Idő</b><button onclick="skill('s1',1)">1 ✨</button></div>
+ <div class="node locked" id="s2"><b>🧬 Szorzó</b><button onclick="skill('s2',2)">2 ✨</button></div>
+ <div class="node locked" id="s3"><b>🤖 AI</b><button onclick="skill('s3',3)">3 ✨</button></div>
+</div>
 </div>
 
-<div class="node locked" id="time2">
-<b>⏳ Időtorzítás II</b>
-<div class="small">x3 tick</div>
-<button onclick="buySkill('time2')">2 ✨</button>
-</div>
-
-<!-- SZORZÓ -->
-<div class="node locked" id="mult1">
-<b>🧬 Szorzó I</b>
-<div class="small">x5 globális</div>
-<button onclick="buySkill('mult1')">1 ✨</button>
-</div>
-
-<div class="node locked" id="mult2">
-<b>🌀 Szorzó II</b>
-<div class="small">x10 globális</div>
-<button onclick="buySkill('mult2')">2 ✨</button>
-</div>
-
-<!-- AUTO -->
-<div class="node locked" id="auto1">
-<b>🤖 Automatizáció I</b>
-<div class="small">AI hatékonyabb</div>
-<button onclick="buySkill('auto1')">1 ✨</button>
-</div>
-
-<div class="node locked" id="auto2">
-<b>🧠 Automatizáció II</b>
-<div class="small">Olcsóbb építkezés</div>
-<button onclick="buySkill('auto2')">2 ✨</button>
-</div>
-
-</div>
+<div class="card" id="prestigePanel" style="display:none">
+<b>🌍 Prestige</b>
+<div class="small">Reset, de minden x‑szer gyorsabb lesz</div>
+<button onclick="prestige()">Prestige (+x2 permanens)</button>
 </div>
 
 </main>
 
 <script>
-let state = JSON.parse(localStorage.getItem("tycoon_tree")) || {
- money:0, perSec:1, multi:1,
+let state = JSON.parse(localStorage.getItem("tycoon_full")) || {
+ money:0,
  essence:0,
+ prestige:0,
+ global:1,
+ owned:{},
  skills:{}
 };
 
-const buildings=[
- {name:"Kis Gyár",cost:50,prod:1},
- {name:"Robot Üzem",cost:500,prod:10},
- {name:"Kvantum Bank",cost:5000,prod:120}
+const factories=[
+ {n:"Kis Gyár",c:50,p:1,u:0},
+ {n:"Robot Üzem",c:400,p:4,u:0},
+ {n:"Automata Sor",c:2000,p:15,u:10000},
+ {n:"AI Gyár",c:12000,p:60,u:50000},
+ {n:"Kvantum Bank",c:80000,p:300,u:200000},
+ {n:"Időerőmű",c:500000,p:2000,u:1e6},
+ {n:"Multiverzum Üzem",c:4e6,p:12000,u:5e6},
+ {n:"Dimenzió Szövő",c:3e7,p:70000,u:2e7}
 ];
 
-function save(){localStorage.setItem("tycoon_tree",JSON.stringify(state))}
+function save(){
+ localStorage.setItem("tycoon_full",JSON.stringify(state));
+}
 
 function fmt(n){
- if(n>=1e9)return (n/1e9).toFixed(2)+"B";
- if(n>=1e6)return (n/1e6).toFixed(2)+"M";
- if(n>=1e3)return (n/1e3).toFixed(2)+"K";
+ if(n>=1e9)return(n/1e9).toFixed(2)+"B";
+ if(n>=1e6)return(n/1e6).toFixed(2)+"M";
+ if(n>=1e3)return(n/1e3).toFixed(2)+"K";
  return Math.floor(n);
+}
+
+function tap(){
+ state.money += 10 * state.global;
+ render();
+}
+
+function buy(i){
+ let o=state.owned[i]||0;
+ let cost=factories[i].c*Math.pow(1.25,o);
+ if(state.money>=cost){
+  state.money-=cost;
+  state.owned[i]=o+1;
+  state.global*=1.015;
+ }
+}
+
+function skill(id,cost){
+ if(state.skills[id]||state.essence<cost) return;
+ state.essence-=cost;
+ state.skills[id]=true;
+
+ if(id==="s1") state.global*=2;
+ if(id==="s2") state.global*=5;
+ if(id==="s3") state.global*=10;
+}
+
+function prestige(){
+ state.money=0;
+ state.owned={};
+ state.prestige++;
+ state.global*=2;
+ save();
+ location.reload();
 }
 
 function render(){
  document.getElementById("money").innerText=fmt(state.money)+" 💰";
  document.getElementById("essence").innerText=state.essence;
 
- let b=document.getElementById("buildings");
- b.innerHTML="";
- buildings.forEach((x,i)=>{
-  b.innerHTML+=`
-  <div>
-   <b>${x.name}</b> (+${x.prod}/mp)
-   <button onclick="buy(${i})">${fmt(x.cost)} 💰</button>
-  </div>`;
+ let f=document.getElementById("factories");
+ f.innerHTML="";
+ factories.forEach((x,i)=>{
+  let unlocked=state.money>=x.u;
+  let o=state.owned[i]||0;
+  let prod=x.p*(1+o*0.15)*o*state.global;
+  let cost=x.c*Math.pow(1.25,o);
+
+  f.innerHTML+=`
+   <div class="${unlocked?"":"locked"}">
+    <b>${unlocked?x.n:"🔒 "+x.n}</b>
+    <div class="small">${unlocked?`+${prod.toFixed(1)}/mp`:`Feloldás: ${fmt(x.u)} 💰`}</div>
+    ${unlocked?`<button onclick="buy(${i})">${fmt(cost)} 💰</button>`:""}
+   </div>`;
  });
 
- if(state.money>=1e6)
-  document.getElementById("essPanel").classList.remove("hidden");
+ if(state.money>=1e6) document.getElementById("essPanel").style.display="block";
+ if(state.money>=1e8) document.getElementById("prestigePanel").style.display="block";
 
- updateSkills();
+ Object.keys(state.skills).forEach(id=>{
+  document.getElementById(id).classList.add("unlocked");
+  if(id==="s1") document.getElementById("s2").classList.remove("locked");
+  if(id==="s2") document.getElementById("s3").classList.remove("locked");
+ });
+
  save();
 }
 
-function buy(i){
- let b=buildings[i];
- if(state.money>=b.cost){
-  state.money-=b.cost;
-  state.perSec+=b.prod;
-  b.cost*=1.3;
- }
-}
-
-function tap(){state.money+=5*state.multi}
-
-function buySkill(id){
- if(state.skills[id]) return;
-
- const costs={time1:1,time2:2,mult1:1,mult2:2,auto1:1,auto2:2};
- if(state.essence<costs[id]) return;
-
- state.essence-=costs[id];
- state.skills[id]=true;
-
- if(id==="time1") state.multi*=2;
- if(id==="time2") state.perSec*=3;
- if(id==="mult1") state.multi*=5;
- if(id==="mult2") state.multi*=10;
- if(id==="auto2") buildings.forEach(b=>b.cost*=0.8);
-
- render();
-}
-
-function updateSkills(){
- document.querySelectorAll(".node").forEach(n=>n.classList.add("locked"));
-
- if(state.skills.time1) document.getElementById("time1").classList.add("unlocked");
- if(state.skills.time1) document.getElementById("time2").classList.remove("locked");
- if(state.skills.time2) document.getElementById("time2").classList.add("unlocked");
-
- if(state.skills.time1) document.getElementById("mult1").classList.remove("locked");
- if(state.skills.mult1) document.getElementById("mult1").classList.add("unlocked");
- if(state.skills.mult1) document.getElementById("mult2").classList.remove("locked");
- if(state.skills.mult2) document.getElementById("mult2").classList.add("unlocked");
-
- if(state.skills.mult1) document.getElementById("auto1").classList.remove("locked");
- if(state.skills.auto1) document.getElementById("auto1").classList.add("unlocked");
- if(state.skills.auto1) document.getElementById("auto2").classList.remove("locked");
- if(state.skills.auto2) document.getElementById("auto2").classList.add("unlocked");
-}
-
 setInterval(()=>{
- state.money+=state.perSec*state.multi;
+ let gain=0;
+ factories.forEach((x,i)=>{
+  let o=state.owned[i]||0;
+  gain+=x.p*(1+o*0.15)*o*state.global;
+ });
+ state.money+=gain;
  if(state.money>=1e9 && state.essence===0) state.essence=1;
  render();
 },1000);
@@ -265,4 +246,4 @@ render();
 
 </body>
 </html>
- 
+  
