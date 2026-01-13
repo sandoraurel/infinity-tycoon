@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Infinity Tycoon</title>
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #0f1220;
+      color: white;
+    }
+
+    header {
+      background: #161a40;
+      text-align: center;
+      padding: 15px;
+      font-size: 22px;
+      font-weight: bold;
+    }
+
+    main {
+      padding: 12px;
+      max-width: 900px;
+      margin: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .money {
+      font-size: 32px;
+      text-align: center;
+      animation: pop 0.2s ease;
+    }
+
+    @keyframes pop {
+      from { transform: scale(1.05); }
+      to { transform: scale(1); }
+    }
+
+    .card {
+      background: #1c2152;
+      padding: 14px;
+      border-radius: 14px;
+    }
+
+    button {
+      width: 100%;
+      padding: 14px;
+      border-radius: 12px;
+      border: none;
+      background: #5b7cfa;
+      color: white;
+      font-size: 18px;
+      cursor: pointer;
+      margin-top: 8px;
+    }
+
+    button:active {
+      transform: scale(0.97);
+    }
+
+    .row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin-top: 8px;
+    }
+
+    .grow {
+      flex: 1;
+    }
+
+    .muted {
+      font-size: 13px;
+      opacity: 0.8;
+    }
+
+    @media (min-width: 768px) {
+      button {
+        width: auto;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<header>Infinity Tycoon</header>
+
+<main>
+
+  <div class="money" id="money">0 💰</div>
+
+  <div class="card">
+    <button onclick="tap()">💵 Gyors pénz</button>
+    <button onclick="boost()">🚀 Boost (x3 – 10 mp)</button>
+  </div>
+
+  <div class="card">
+    <b>🏭 Épületek</b>
+    <div id="buildings"></div>
+  </div>
+
+  <div class="card">
+    <b>🎉 Esemény</b>
+    <div class="muted" id="event">—</div>
+  </div>
+
+</main>
+
+<script>
+  let money = 0;
+  let perSec = 1;
+  let multiplier = 1;
+
+  function fmt(n) {
+    if (n >= 1e12) return (n / 1e12).toFixed(2) + " T";
+    if (n >= 1e9) return (n / 1e9).toFixed(2) + " B";
+    if (n >= 1e6) return (n / 1e6).toFixed(2) + " M";
+    if (n >= 1e3) return (n / 1e3).toFixed(2) + " K";
+    return Math.floor(n);
+  }
+
+  const buildings = [
+    { name: "Kis Gyár", cost: 50, prod: 1 },
+    { name: "Robot Üzem", cost: 500, prod: 10 },
+    { name: "Kvantum Bank", cost: 5000, prod: 120 },
+    { name: "Űrkolónia", cost: 50000, prod: 2000 }
+  ];
+
+  function render() {
+    document.getElementById("money").innerText = fmt(money) + " 💰";
+    const container = document.getElementById("buildings");
+    container.innerHTML = "";
+
+    buildings.forEach((b, i) => {
+      container.innerHTML += `
+        <div class="row">
+          <div class="grow">
+            <b>${b.name}</b><br>
+            <span class="muted">+${b.prod} / mp</span>
+          </div>
+          <button onclick="buy(${i})">${fmt(b.cost)} 💰</button>
+        </div>
+      `;
+    });
+  }
+
+  function buy(i) {
+    let b = buildings[i];
+    if (money >= b.cost) {
+      money -= b.cost;
+      perSec += b.prod;
+      b.cost = Math.ceil(b.cost * 1.3);
+      render();
+    }
+  }
+
+  function tap() {
+    money += 5 * multiplier;
+    render();
+  }
+
+  function boost() {
+    document.getElementById("event").innerText = "BOOST AKTÍV! (x3)";
+    multiplier = 3;
+    setTimeout(() => {
+      multiplier = 1;
+      document.getElementById("event").innerText = "—";
+    }, 10000);
+  }
+
+  setInterval(() => {
+    money += perSec * multiplier;
+    render();
+  }, 1000);
+
+  setInterval(() => {
+    if (Math.random() < 0.3) {
+      money += 500;
+      document.getElementById("event").innerText = "🎁 Szerencse! +500 💰";
+      setTimeout(() => {
+        document.getElementById("event").innerText = "—";
+      }, 3000);
+    }
+  }, 8000);
+
+  render();
+</script>
+
+</body>
+</html>
