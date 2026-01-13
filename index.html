@@ -1,196 +1,268 @@
+
 <!DOCTYPE html>
 <html lang="hu">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Infinity Tycoon</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Infinity Tycoon – Essence Tree</title>
 
-  <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: #0f1220;
-      color: white;
-    }
+<style>
+:root{
+ --bg:#0e1020;
+ --card:#1c2152;
+ --accent:#5b7cfa;
+ --success:#7cfab0;
+ --locked:#555a9c;
+}
 
-    header {
-      background: #161a40;
-      text-align: center;
-      padding: 15px;
-      font-size: 22px;
-      font-weight: bold;
-    }
+body{
+ margin:0;
+ font-family:system-ui, Arial;
+ background:linear-gradient(180deg,#0e1020,#070816);
+ color:#fff;
+}
 
-    main {
-      padding: 12px;
-      max-width: 900px;
-      margin: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
+header{
+ background:linear-gradient(90deg,#161a40,#1e2470);
+ padding:16px;
+ text-align:center;
+ font-size:22px;
+ font-weight:700;
+}
 
-    .money {
-      font-size: 32px;
-      text-align: center;
-      animation: pop 0.2s ease;
-    }
+main{
+ max-width:1000px;
+ margin:auto;
+ padding:14px;
+ display:flex;
+ flex-direction:column;
+ gap:14px;
+}
 
-    @keyframes pop {
-      from { transform: scale(1.05); }
-      to { transform: scale(1); }
-    }
+.card{
+ background:var(--card);
+ padding:16px;
+ border-radius:16px;
+ box-shadow:0 10px 28px rgba(0,0,0,.4);
+}
 
-    .card {
-      background: #1c2152;
-      padding: 14px;
-      border-radius: 14px;
-    }
+.money{
+ font-size:34px;
+ font-weight:800;
+ text-align:center;
+}
 
-    button {
-      width: 100%;
-      padding: 14px;
-      border-radius: 12px;
-      border: none;
-      background: #5b7cfa;
-      color: white;
-      font-size: 18px;
-      cursor: pointer;
-      margin-top: 8px;
-    }
+button{
+ width:100%;
+ padding:14px;
+ margin-top:8px;
+ border:0;
+ border-radius:14px;
+ background:var(--accent);
+ color:#fff;
+ font-size:16px;
+ font-weight:600;
+ cursor:pointer;
+}
 
-    button:active {
-      transform: scale(0.97);
-    }
+button:disabled{
+ background:var(--locked);
+ opacity:.5;
+}
 
-    .row {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-      margin-top: 8px;
-    }
+.tree{
+ display:grid;
+ grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+ gap:12px;
+ margin-top:10px;
+}
 
-    .grow {
-      flex: 1;
-    }
+.node{
+ background:#23286b;
+ padding:12px;
+ border-radius:14px;
+ text-align:center;
+ transition:.2s;
+}
 
-    .muted {
-      font-size: 13px;
-      opacity: 0.8;
-    }
+.node.locked{
+ opacity:.4;
+}
 
-    @media (min-width: 768px) {
-      button {
-        width: auto;
-      }
-    }
-  </style>
+.node.unlocked{
+ background:linear-gradient(135deg,#3c47a7,#5b7cfa);
+ box-shadow:0 0 16px rgba(91,124,250,.7);
+}
+
+.small{font-size:13px;opacity:.85}
+.hidden{display:none}
+</style>
 </head>
 
 <body>
-
-<header>Infinity Tycoon</header>
+<header>Infinity Tycoon — ✨ Esszencia Skill Tree</header>
 
 <main>
 
-  <div class="money" id="money">0 💰</div>
+<div class="money" id="money">0 💰</div>
 
-  <div class="card">
-    <button onclick="tap()">💵 Gyors pénz</button>
-    <button onclick="boost()">🚀 Boost (x3 – 10 mp)</button>
-  </div>
+<div class="card">
+<button onclick="tap()">💵 Gyors pénz</button>
+</div>
 
-  <div class="card">
-    <b>🏭 Épületek</b>
-    <div id="buildings"></div>
-  </div>
+<div class="card">
+<b>🏭 Épületek</b>
+<div id="buildings"></div>
+</div>
 
-  <div class="card">
-    <b>🎉 Esemény</b>
-    <div class="muted" id="event">—</div>
-  </div>
+<div class="card hidden" id="essPanel">
+<b>✨ Esszencia: <span id="essence">0</span></b>
+
+<div class="tree">
+
+<!-- IDŐ -->
+<div class="node" id="time1">
+<b>⏱ Időtorzítás I</b>
+<div class="small">x2 minden</div>
+<button onclick="buySkill('time1')">1 ✨</button>
+</div>
+
+<div class="node locked" id="time2">
+<b>⏳ Időtorzítás II</b>
+<div class="small">x3 tick</div>
+<button onclick="buySkill('time2')">2 ✨</button>
+</div>
+
+<!-- SZORZÓ -->
+<div class="node locked" id="mult1">
+<b>🧬 Szorzó I</b>
+<div class="small">x5 globális</div>
+<button onclick="buySkill('mult1')">1 ✨</button>
+</div>
+
+<div class="node locked" id="mult2">
+<b>🌀 Szorzó II</b>
+<div class="small">x10 globális</div>
+<button onclick="buySkill('mult2')">2 ✨</button>
+</div>
+
+<!-- AUTO -->
+<div class="node locked" id="auto1">
+<b>🤖 Automatizáció I</b>
+<div class="small">AI hatékonyabb</div>
+<button onclick="buySkill('auto1')">1 ✨</button>
+</div>
+
+<div class="node locked" id="auto2">
+<b>🧠 Automatizáció II</b>
+<div class="small">Olcsóbb építkezés</div>
+<button onclick="buySkill('auto2')">2 ✨</button>
+</div>
+
+</div>
+</div>
 
 </main>
 
 <script>
-  let money = 0;
-  let perSec = 1;
-  let multiplier = 1;
+let state = JSON.parse(localStorage.getItem("tycoon_tree")) || {
+ money:0, perSec:1, multi:1,
+ essence:0,
+ skills:{}
+};
 
-  function fmt(n) {
-    if (n >= 1e12) return (n / 1e12).toFixed(2) + " T";
-    if (n >= 1e9) return (n / 1e9).toFixed(2) + " B";
-    if (n >= 1e6) return (n / 1e6).toFixed(2) + " M";
-    if (n >= 1e3) return (n / 1e3).toFixed(2) + " K";
-    return Math.floor(n);
-  }
+const buildings=[
+ {name:"Kis Gyár",cost:50,prod:1},
+ {name:"Robot Üzem",cost:500,prod:10},
+ {name:"Kvantum Bank",cost:5000,prod:120}
+];
 
-  const buildings = [
-    { name: "Kis Gyár", cost: 50, prod: 1 },
-    { name: "Robot Üzem", cost: 500, prod: 10 },
-    { name: "Kvantum Bank", cost: 5000, prod: 120 },
-    { name: "Űrkolónia", cost: 50000, prod: 2000 }
-  ];
+function save(){localStorage.setItem("tycoon_tree",JSON.stringify(state))}
 
-  function render() {
-    document.getElementById("money").innerText = fmt(money) + " 💰";
-    const container = document.getElementById("buildings");
-    container.innerHTML = "";
+function fmt(n){
+ if(n>=1e9)return (n/1e9).toFixed(2)+"B";
+ if(n>=1e6)return (n/1e6).toFixed(2)+"M";
+ if(n>=1e3)return (n/1e3).toFixed(2)+"K";
+ return Math.floor(n);
+}
 
-    buildings.forEach((b, i) => {
-      container.innerHTML += `
-        <div class="row">
-          <div class="grow">
-            <b>${b.name}</b><br>
-            <span class="muted">+${b.prod} / mp</span>
-          </div>
-          <button onclick="buy(${i})">${fmt(b.cost)} 💰</button>
-        </div>
-      `;
-    });
-  }
+function render(){
+ document.getElementById("money").innerText=fmt(state.money)+" 💰";
+ document.getElementById("essence").innerText=state.essence;
 
-  function buy(i) {
-    let b = buildings[i];
-    if (money >= b.cost) {
-      money -= b.cost;
-      perSec += b.prod;
-      b.cost = Math.ceil(b.cost * 1.3);
-      render();
-    }
-  }
+ let b=document.getElementById("buildings");
+ b.innerHTML="";
+ buildings.forEach((x,i)=>{
+  b.innerHTML+=`
+  <div>
+   <b>${x.name}</b> (+${x.prod}/mp)
+   <button onclick="buy(${i})">${fmt(x.cost)} 💰</button>
+  </div>`;
+ });
 
-  function tap() {
-    money += 5 * multiplier;
-    render();
-  }
+ if(state.money>=1e6)
+  document.getElementById("essPanel").classList.remove("hidden");
 
-  function boost() {
-    document.getElementById("event").innerText = "BOOST AKTÍV! (x3)";
-    multiplier = 3;
-    setTimeout(() => {
-      multiplier = 1;
-      document.getElementById("event").innerText = "—";
-    }, 10000);
-  }
+ updateSkills();
+ save();
+}
 
-  setInterval(() => {
-    money += perSec * multiplier;
-    render();
-  }, 1000);
+function buy(i){
+ let b=buildings[i];
+ if(state.money>=b.cost){
+  state.money-=b.cost;
+  state.perSec+=b.prod;
+  b.cost*=1.3;
+ }
+}
 
-  setInterval(() => {
-    if (Math.random() < 0.3) {
-      money += 500;
-      document.getElementById("event").innerText = "🎁 Szerencse! +500 💰";
-      setTimeout(() => {
-        document.getElementById("event").innerText = "—";
-      }, 3000);
-    }
-  }, 8000);
+function tap(){state.money+=5*state.multi}
 
-  render();
+function buySkill(id){
+ if(state.skills[id]) return;
+
+ const costs={time1:1,time2:2,mult1:1,mult2:2,auto1:1,auto2:2};
+ if(state.essence<costs[id]) return;
+
+ state.essence-=costs[id];
+ state.skills[id]=true;
+
+ if(id==="time1") state.multi*=2;
+ if(id==="time2") state.perSec*=3;
+ if(id==="mult1") state.multi*=5;
+ if(id==="mult2") state.multi*=10;
+ if(id==="auto2") buildings.forEach(b=>b.cost*=0.8);
+
+ render();
+}
+
+function updateSkills(){
+ document.querySelectorAll(".node").forEach(n=>n.classList.add("locked"));
+
+ if(state.skills.time1) document.getElementById("time1").classList.add("unlocked");
+ if(state.skills.time1) document.getElementById("time2").classList.remove("locked");
+ if(state.skills.time2) document.getElementById("time2").classList.add("unlocked");
+
+ if(state.skills.time1) document.getElementById("mult1").classList.remove("locked");
+ if(state.skills.mult1) document.getElementById("mult1").classList.add("unlocked");
+ if(state.skills.mult1) document.getElementById("mult2").classList.remove("locked");
+ if(state.skills.mult2) document.getElementById("mult2").classList.add("unlocked");
+
+ if(state.skills.mult1) document.getElementById("auto1").classList.remove("locked");
+ if(state.skills.auto1) document.getElementById("auto1").classList.add("unlocked");
+ if(state.skills.auto1) document.getElementById("auto2").classList.remove("locked");
+ if(state.skills.auto2) document.getElementById("auto2").classList.add("unlocked");
+}
+
+setInterval(()=>{
+ state.money+=state.perSec*state.multi;
+ if(state.money>=1e9 && state.essence===0) state.essence=1;
+ render();
+},1000);
+
+render();
 </script>
 
 </body>
 </html>
+ 
