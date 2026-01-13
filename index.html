@@ -1,249 +1,1868 @@
 
-<!DOCTYPE html>
+<!doctype html>
 <html lang="hu">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Infinity Tycoon – Full Systems</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <title>Infinity Tycoon — Map Edition</title>
+  <style>
+    :root{
+      --bg0:#070816;
+      --bg1:#0e1020;
+      --card:rgba(24,29,78,.92);
+      --card2:rgba(35,42,112,.92);
+      --accent:#5b7cfa;
+      --accent2:#7cfab0;
+      --warn:#ffcf40;
+      --danger:#ff5b6b;
+      --text:#ffffff;
+      --muted:rgba(255,255,255,.75);
+      --shadow:0 12px 30px rgba(0,0,0,.45);
+      --radius:16px;
+    }
+    html,body{height:100%;margin:0;font-family:system-ui,Segoe UI,Arial;background:linear-gradient(180deg,var(--bg1),var(--bg0));color:var(--text);overflow:hidden}
+    #wrap{position:fixed;inset:0;display:flex;flex-direction:column}
+    #topbar{
+      position:absolute;left:10px;right:10px;top:10px;
+      display:flex;gap:10px;align-items:stretch;z-index:5;flex-wrap:wrap
+    }
+    .pill{
+      background:linear-gradient(135deg,rgba(22,26,64,.92),rgba(30,36,112,.92));
+      border:1px solid rgba(255,255,255,.08);
+      box-shadow:var(--shadow);
+      border-radius:999px;
+      padding:10px 12px;
+      display:flex;gap:10px;align-items:center;
+      backdrop-filter: blur(8px);
+    }
+    .pill b{font-weight:800}
+    .pill .k{font-size:12px;color:var(--muted);margin-right:6px}
+    .pill .v{font-size:14px}
+    .pill .tiny{font-size:12px;color:var(--muted)}
+    .btn{
+      cursor:pointer;
+      border:0;border-radius:999px;
+      padding:10px 12px;
+      background:linear-gradient(135deg,var(--accent),#3b59d8);
+      color:white;font-weight:800;
+      box-shadow:0 12px 24px rgba(91,124,250,.25);
+      transition:.15s transform, .15s filter;
+      user-select:none;-webkit-tap-highlight-color:transparent;
+    }
+    .btn:active{transform:scale(.97);filter:brightness(1.1)}
+    .btn.secondary{background:linear-gradient(135deg,rgba(255,255,255,.12),rgba(255,255,255,.06));box-shadow:none;border:1px solid rgba(255,255,255,.10)}
+    .btn.warn{background:linear-gradient(135deg,var(--warn),#ff9f1a);color:#111}
+    .btn.danger{background:linear-gradient(135deg,var(--danger),#d83b4e)}
+    .btn:disabled{opacity:.55;cursor:not-allowed;filter:grayscale(.3)}
+    #canvas{
+      width:100%;height:100%;
+      display:block;
+    }
 
-<style>
-:root{
- --bg:#0e1020;
- --card:#1c2152;
- --accent:#5b7cfa;
- --success:#7cfab0;
- --locked:#555a9c;
-}
+    /* panels */
+    .panel{
+      position:absolute;top:90px;right:10px;bottom:10px;
+      width:min(420px, calc(100vw - 20px));
+      background:linear-gradient(180deg,var(--card),rgba(18,22,60,.90));
+      border:1px solid rgba(255,255,255,.08);
+      box-shadow:var(--shadow);
+      border-radius:var(--radius);
+      z-index:6;
+      display:none;
+      overflow:hidden;
+      backdrop-filter: blur(10px);
+    }
+    .panel.open{display:flex;flex-direction:column;animation:panelIn .25s ease}
+    @keyframes panelIn{from{opacity:.2;transform:translateY(10px)}to{opacity:1;transform:none}}
+    .panel header{
+      padding:14px 14px 10px;
+      display:flex;gap:10px;align-items:center;justify-content:space-between;
+      border-bottom:1px solid rgba(255,255,255,.07);
+      background:linear-gradient(135deg,rgba(35,42,112,.55),rgba(0,0,0,0));
+    }
+    .panel header .title{font-weight:900}
+    .panel header .sub{font-size:12px;color:var(--muted)}
+    .panel .body{padding:14px;overflow:auto}
+    .card{
+      background:linear-gradient(135deg,var(--card2),rgba(15,18,40,.6));
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:14px;
+      padding:12px;
+      margin-bottom:12px;
+    }
+    .row{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+    .row .grow{flex:1}
+    .small{font-size:12px;color:var(--muted)}
+    .h{font-weight:900}
+    .tag{
+      display:inline-flex;gap:6px;align-items:center;
+      padding:4px 10px;border-radius:999px;
+      border:1px solid rgba(255,255,255,.12);
+      background:rgba(255,255,255,.06);
+      font-size:12px;color:var(--muted)
+    }
+    .tag.green{border-color:rgba(124,250,176,.35);background:rgba(124,250,176,.10);color:rgba(124,250,176,.95)}
+    .tag.warn{border-color:rgba(255,207,64,.35);background:rgba(255,207,64,.10);color:rgba(255,207,64,.95)}
+    .tag.red{border-color:rgba(255,91,107,.35);background:rgba(255,91,107,.10);color:rgba(255,91,107,.95)}
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+    .node{
+      border-radius:14px;padding:10px;
+      border:1px solid rgba(255,255,255,.08);
+      background:rgba(255,255,255,.06);
+      text-align:left;
+    }
+    .node.locked{opacity:.45}
+    .node.unlocked{
+      background:linear-gradient(135deg,rgba(91,124,250,.35),rgba(124,250,176,.18));
+      border-color:rgba(91,124,250,.35);
+      box-shadow:0 0 18px rgba(91,124,250,.20) inset;
+    }
+    .node .name{font-weight:900}
+    .node .desc{font-size:12px;color:var(--muted);margin-top:3px;line-height:1.2}
+    .node .foot{margin-top:8px;display:flex;gap:8px;align-items:center;justify-content:space-between}
+    .node .cost{font-size:12px;color:rgba(255,255,255,.9)}
+    .sep{height:1px;background:rgba(255,255,255,.07);margin:10px 0}
+    .toast{
+      position:absolute;left:50%;top:84px;transform:translateX(-50%);
+      z-index:20;
+      background:rgba(15,18,40,.92);
+      border:1px solid rgba(255,255,255,.10);
+      box-shadow:0 16px 36px rgba(0,0,0,.55);
+      border-radius:999px;
+      padding:10px 14px;
+      display:none;
+      max-width:calc(100vw - 24px);
+      backdrop-filter: blur(8px);
+    }
+    .toast.show{display:flex;gap:10px;align-items:center;animation:toastIn .25s ease}
+    @keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(-6px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+    .toast .t{font-weight:900}
+    .toast .m{font-size:12px;color:var(--muted)}
 
-body{
- margin:0;
- font-family:system-ui, Arial;
- background:linear-gradient(180deg,#0e1020,#070816);
- color:#fff;
-}
+    /* Infinity overlay */
+    #infinityOverlay{
+      position:absolute;inset:0;z-index:50;display:none;
+      background:radial-gradient(circle at 50% 40%, rgba(124,250,176,.10), rgba(0,0,0,.65));
+      backdrop-filter: blur(4px);
+    }
+    #infinityOverlay.show{display:block}
+    #infinityOverlay .center{
+      position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+      width:min(860px, calc(100vw - 22px));
+      background:linear-gradient(180deg, rgba(15,18,40,.86), rgba(5,6,16,.86));
+      border:1px solid rgba(255,255,255,.10);
+      border-radius:22px;
+      box-shadow:0 24px 70px rgba(0,0,0,.75);
+      overflow:hidden;
+    }
+    #infinityOverlay .head{
+      padding:16px 16px 10px;
+      display:flex;justify-content:space-between;align-items:flex-start;gap:10px
+    }
+    #infinityOverlay .head .title{font-size:20px;font-weight:1000;letter-spacing:.3px}
+    #infinityOverlay .head .sub{font-size:12px;color:var(--muted);margin-top:4px}
+    #infinityOverlay .content{display:grid;grid-template-columns:1.2fr .8fr;gap:0}
+    #infinityOverlay canvas{width:100%;height:320px;display:block;background:#060711}
+    #infinityOverlay .side{padding:14px 16px}
+    #infinityOverlay .side .big{
+      font-size:52px;font-weight:1100;letter-spacing:2px;line-height:1;
+      text-shadow:0 0 22px rgba(124,250,176,.25);
+      margin:6px 0 10px;
+    }
+    #infinityOverlay .side .hint{color:var(--muted);font-size:12px;line-height:1.35}
+    #infinityOverlay .actions{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}
+    #infinityOverlay .footer{
+      padding:12px 16px;border-top:1px solid rgba(255,255,255,.08);
+      display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap
+    }
 
-header{
- background:linear-gradient(90deg,#161a40,#1e2470);
- padding:16px;
- text-align:center;
- font-size:22px;
- font-weight:700;
-}
-
-main{
- max-width:1100px;
- margin:auto;
- padding:14px;
- display:flex;
- flex-direction:column;
- gap:14px;
-}
-
-.card{
- background:var(--card);
- padding:16px;
- border-radius:16px;
- box-shadow:0 10px 28px rgba(0,0,0,.4);
- animation:appear .4s ease;
-}
-
-@keyframes appear{
- from{opacity:0;transform:translateY(10px)}
- to{opacity:1;transform:none}
-}
-
-.money{
- font-size:34px;
- font-weight:800;
- text-align:center;
-}
-
-button{
- width:100%;
- padding:14px;
- margin-top:8px;
- border:0;
- border-radius:14px;
- background:var(--accent);
- color:#fff;
- font-size:16px;
- font-weight:600;
- cursor:pointer;
- transition:.15s;
-}
-
-button:active{transform:scale(.96)}
-button:disabled{background:#555;opacity:.5}
-
-.locked{opacity:.4}
-.small{font-size:13px;opacity:.8}
-.green{color:var(--success)}
-
-.tree{
- display:grid;
- grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
- gap:12px;
-}
-
-.node{
- background:#23286b;
- padding:12px;
- border-radius:14px;
- text-align:center;
-}
-
-.node.unlocked{
- background:linear-gradient(135deg,#3c47a7,#5b7cfa);
- box-shadow:0 0 14px rgba(91,124,250,.7);
-}
-</style>
+    /* small screens */
+    @media (max-width:540px){
+      #topbar{top:8px;left:8px;right:8px}
+      .panel{top:128px}
+      #infinityOverlay .content{grid-template-columns:1fr}
+      #infinityOverlay canvas{height:260px}
+    }
+  </style>
 </head>
-
 <body>
-<header>Infinity Tycoon</header>
+<div id="wrap">
+  <canvas id="canvas"></canvas>
 
-<main>
+  <div id="topbar">
+    <div class="pill" id="pMoney"><span class="k">💰</span><b class="v" id="moneyTxt">0</b><span class="tiny" id="perSecTxt">(+0/mp)</span></div>
+    <div class="pill"><span class="k">✨</span><b class="v" id="essTxt">0</b><span class="tiny">Esszencia</span></div>
+    <div class="pill"><span class="k">♾️</span><b class="v" id="infTxt">0</b><span class="tiny">Token</span></div>
 
-<div class="money" id="money">0 💰</div>
+    <button class="btn" id="btnClick">+ Kattintás</button>
+    <button class="btn secondary" id="btnRoadmap">🔒 Feloldások</button>
+    <button class="btn secondary" id="btnTrees">🌳 Fák</button>
+    <button class="btn secondary" id="btnSettings">⚙️</button>
+  </div>
 
-<div class="card">
-<button onclick="tap()">💵 Gyors pénz</button>
+  <div class="toast" id="toast">
+    <div class="t" id="toastT">UNLOCKED</div>
+    <div class="m" id="toastM">Valami új elérhető!</div>
+  </div>
+
+  <!-- Factory panel -->
+  <div class="panel" id="factoryPanel">
+    <header>
+      <div>
+        <div class="title" id="fpTitle">Gyár</div>
+        <div class="sub" id="fpSub">—</div>
+      </div>
+      <button class="btn secondary" id="fpClose">✕</button>
+    </header>
+    <div class="body">
+      <div class="card">
+        <div class="row">
+          <div class="grow">
+            <div class="h" id="fpName">—</div>
+            <div class="small" id="fpStats">—</div>
+          </div>
+          <div class="tag green" id="fpUnlockedTag">✅ Feloldva</div>
+          <div class="tag warn" id="fpLockedTag" style="display:none">🔒 Zárolva</div>
+        </div>
+        <div class="sep"></div>
+        <div class="row">
+          <button class="btn" id="btnLevelUp">⬆️ Szintlépés</button>
+          <button class="btn secondary" id="btnCenter">🎯 Középre</button>
+        </div>
+        <div class="small" id="fpCost">Költség: —</div>
+      </div>
+
+      <div class="card">
+        <div class="row"><div class="h">🔧 Modulok</div><div class="small">Gyár-specifikus bónuszok</div></div>
+        <div class="sep"></div>
+        <div class="grid2" id="moduleGrid"></div>
+      </div>
+
+      <div class="card">
+        <div class="row"><div class="h">🤖 Automatizáció</div><div class="small">Feloldás után mindig fut</div></div>
+        <div class="sep"></div>
+        <div class="row">
+          <div class="tag" id="aiTag">🔒 ROI-AI: nincs</div>
+          <button class="btn" id="btnUnlockAI">Feloldás</button>
+        </div>
+        <div class="small" id="aiHint">—</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Roadmap panel -->
+  <div class="panel" id="roadmapPanel">
+    <header>
+      <div>
+        <div class="title">🔒 Feloldások előnézet</div>
+        <div class="sub">Látod mit kapsz később, és odaugorhatsz</div>
+      </div>
+      <button class="btn secondary" id="rmClose">✕</button>
+    </header>
+    <div class="body" id="rmBody"></div>
+  </div>
+
+  <!-- Trees panel -->
+  <div class="panel" id="treesPanel">
+    <header>
+      <div>
+        <div class="title">🌳 Fejlesztési fák</div>
+        <div class="sub">Esszencia (prestige) + Végtelen token (endgame)</div>
+      </div>
+      <button class="btn secondary" id="trClose">✕</button>
+    </header>
+    <div class="body">
+      <div class="card">
+        <div class="row">
+          <div class="h">✨ Esszencia fa</div>
+          <div class="tag warn">Csak prestige-ből</div>
+        </div>
+        <div class="sep"></div>
+        <div class="grid3" id="essTree"></div>
+      </div>
+
+      <div class="card">
+        <div class="row">
+          <div class="h">♾️ Végtelen fa</div>
+          <div class="tag green">Passzív + Aktív</div>
+        </div>
+        <div class="sep"></div>
+        <div class="grid3" id="infTree"></div>
+        <div class="small" style="margin-top:8px">
+          Aktív togglökből maximum <b>2</b> lehet egyszerre bekapcsolva.
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="row"><div class="h">🌍 Prestige</div><div class="small">Esszencia jutalom: csak javulásért</div></div>
+        <div class="sep"></div>
+        <div class="row">
+          <div class="grow">
+            <div class="small">Elérhető ha: <b>≥ 1e9 💰</b></div>
+            <div class="small">Jelenlegi futás max pénze: <b id="maxRunTxt">—</b></div>
+            <div class="small">Várható Esszencia: <b id="essGainTxt">0</b> ✨</div>
+          </div>
+          <button class="btn warn" id="btnPrestige">Prestige</button>
+        </div>
+        <div class="small" id="prestigeHint">—</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings panel -->
+  <div class="panel" id="settingsPanel">
+    <header>
+      <div>
+        <div class="title">⚙️ Beállítások</div>
+        <div class="sub">Mentés, reset, tippek</div>
+      </div>
+      <button class="btn secondary" id="stClose">✕</button>
+    </header>
+    <div class="body">
+      <div class="card">
+        <div class="row"><div class="h">💾 Mentés</div><div class="tag green" id="saveTag">OK</div></div>
+        <div class="sep"></div>
+        <div class="small" id="saveInfo">—</div>
+        <div class="row">
+          <button class="btn secondary" id="btnExport">Export</button>
+          <button class="btn secondary" id="btnImport">Import</button>
+          <button class="btn danger" id="btnWipe">Teljes törlés</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="row"><div class="h">🧭 Irányítás</div></div>
+        <div class="sep"></div>
+        <div class="small">Map húzás: egérrel/ujjal. Zoom: egérgörgő vagy pinch. Gyárra kattintva: panel.</div>
+      </div>
+
+      <div class="card">
+        <div class="row"><div class="h">🧪 Debug</div></div>
+        <div class="sep"></div>
+        <div class="row">
+          <button class="btn secondary" id="btnCenterAll">Kamera közép</button>
+          <button class="btn secondary" id="btnFast">+5 perc</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Infinity overlay -->
+  <div id="infinityOverlay">
+    <div class="center">
+      <div class="head">
+        <div>
+          <div class="title">♾️ Elérted a Végtelent</div>
+          <div class="sub">A valóság ezen az oldalon véget ér. Te döntesz: átlépsz vagy maradsz még.</div>
+        </div>
+        <button class="btn secondary" id="btnInfClose">✕</button>
+      </div>
+      <div class="content">
+        <canvas id="infCanvas"></canvas>
+        <div class="side">
+          <div class="big">∞</div>
+          <div class="hint">
+            Ha belépsz: kapsz <b>+1 ♾️ Végtelen tokent</b>, és minden újrakezdődik egy magasabb dimenzióban.
+            <br><br>
+            <span class="tag warn">Manuális döntés</span>
+            <span class="tag green">Cinematic reset</span>
+          </div>
+          <div class="actions">
+            <button class="btn warn" id="btnEnterInfinity">Belépek a Végtelenbe</button>
+            <button class="btn secondary" id="btnStay">Maradok még</button>
+          </div>
+          <div class="small" style="margin-top:10px">Tipp: ha készen állsz, lépj. Ha még finomítanál, maradj.</div>
+        </div>
+      </div>
+      <div class="footer">
+        <div class="small">Végtelen küszöb: <b>1e308 💰</b></div>
+        <div class="small">Aktív togglök limit: <b>2</b></div>
+      </div>
+    </div>
+  </div>
+
 </div>
-
-<div class="card">
-<b>🏭 Gyárak</b>
-<div id="factories"></div>
-</div>
-
-<div class="card" id="essPanel" style="display:none">
-<b>✨ Esszencia: <span id="essence">0</span></b>
-<div class="tree">
- <div class="node" id="s1"><b>⏱ Idő</b><button onclick="skill('s1',1)">1 ✨</button></div>
- <div class="node locked" id="s2"><b>🧬 Szorzó</b><button onclick="skill('s2',2)">2 ✨</button></div>
- <div class="node locked" id="s3"><b>🤖 AI</b><button onclick="skill('s3',3)">3 ✨</button></div>
-</div>
-</div>
-
-<div class="card" id="prestigePanel" style="display:none">
-<b>🌍 Prestige</b>
-<div class="small">Reset, de minden x‑szer gyorsabb lesz</div>
-<button onclick="prestige()">Prestige (+x2 permanens)</button>
-</div>
-
-</main>
 
 <script>
-let state = JSON.parse(localStorage.getItem("tycoon_full")) || {
- money:0,
- essence:0,
- prestige:0,
- global:1,
- owned:{},
- skills:{}
-};
+/* =========================
+   0) BigNum (mantissa+exp10)
+   ========================= */
+class BigNum{
+  constructor(m=0,e=0){ this.m=m; this.e=e; this.norm(); }
+  static zero(){ return new BigNum(0,0); }
+  static one(){ return new BigNum(1,0); }
+  static fromNumber(x){
+    if(!isFinite(x) || x<=0) return BigNum.zero();
+    let e=Math.floor(Math.log10(x));
+    let m=x/Math.pow(10,e);
+    return new BigNum(m,e);
+  }
+  static fromME(m,e){ return new BigNum(m,e); }
+  clone(){ return new BigNum(this.m,this.e); }
+  isZero(){ return this.m===0; }
+  norm(){
+    if(this.m===0){ this.e=0; return this; }
+    while(this.m>=10){ this.m/=10; this.e++; }
+    while(this.m<1){ this.m*=10; this.e--; if(this.e<-9999){ this.m=0; this.e=0; break; } }
+    return this;
+  }
+  cmp(b){
+    if(this.m===0 && b.m===0) return 0;
+    if(this.m===0) return -1;
+    if(b.m===0) return 1;
+    if(this.e!==b.e) return this.e>b.e?1:-1;
+    if(this.m===b.m) return 0;
+    return this.m>b.m?1:-1;
+  }
+  gte(b){ return this.cmp(b)>=0; }
+  lt(b){ return this.cmp(b)<0; }
+  add(b){
+    if(this.m===0) return b.clone();
+    if(b.m===0) return this.clone();
+    let a=this.clone();
+    let d=a.e-b.e;
+    if(d>=16) return a; // b túl kicsi
+    if(d<=-16) return b.clone(); // a túl kicsi
+    if(d>=0){
+      return new BigNum(a.m + b.m/Math.pow(10,d), a.e);
+    }else{
+      return new BigNum(a.m/Math.pow(10,-d) + b.m, b.e);
+    }
+  }
+  sub(b){
+    // feltételezzük: this>=b
+    if(b.m===0) return this.clone();
+    if(this.cmp(b)<=0) return BigNum.zero();
+    let a=this.clone();
+    let d=a.e-b.e;
+    if(d>=16) return a; // b elhanyagolható
+    if(d<0){
+      // nem várható ebben a játékban
+      return BigNum.zero();
+    }
+    let m=a.m - b.m/Math.pow(10,d);
+    return new BigNum(m,a.e);
+  }
+  mul(b){
+    if(this.m===0 || b.m===0) return BigNum.zero();
+    return new BigNum(this.m*b.m, this.e+b.e);
+  }
+  mulFloat(f){
+    if(this.m===0 || f===0) return BigNum.zero();
+    return new BigNum(this.m*f, this.e);
+  }
+  powFloat(p){
+    // (m*10^e)^p = (m^p)*10^(e*p)
+    if(this.m===0) return BigNum.zero();
+    let le = this.e*p;
+    let ie = Math.floor(le);
+    let fe = le-ie;
+    let m = Math.pow(this.m, p) * Math.pow(10, fe);
+    return new BigNum(m, ie);
+  }
+  log10(){ if(this.m===0) return -Infinity; return this.e + Math.log10(this.m); }
+  toSci(prec=3){
+    if(this.m===0) return "0";
+    return this.m.toFixed(prec) + "e" + this.e;
+  }
+  toShort(){
+    if(this.m===0) return "0";
+    const e=this.e;
+    if(e<3) return (this.m*Math.pow(10,e)).toFixed(0);
+    const units=["K","M","B","T","Qa","Qi","Sx","Sp","Oc","No","Dc"];
+    const idx=Math.floor((e-3)/3);
+    if(idx<units.length){
+      const u=units[idx];
+      const scale = 3 + idx*3;
+      const val = this.m*Math.pow(10, e-scale);
+      return val.toFixed(val<10?2: val<100?1:0) + u;
+    }
+    return this.toSci(2);
+  }
+}
 
-const factories=[
- {n:"Kis Gyár",c:50,p:1,u:0},
- {n:"Robot Üzem",c:400,p:4,u:0},
- {n:"Automata Sor",c:2000,p:15,u:10000},
- {n:"AI Gyár",c:12000,p:60,u:50000},
- {n:"Kvantum Bank",c:80000,p:300,u:200000},
- {n:"Időerőmű",c:500000,p:2000,u:1e6},
- {n:"Multiverzum Üzem",c:4e6,p:12000,u:5e6},
- {n:"Dimenzió Szövő",c:3e7,p:70000,u:2e7}
+/* =========================
+   1) Config
+   ========================= */
+const SAVE_KEY="infty_tycoon_map_v1";
+const SAVE_VER=1;
+
+const INF_THRESHOLD = BigNum.fromME(1,308); // 1e308
+
+// Factory types: menőbb = magasabb tier
+const FACTORY_TYPES = [
+  { id:"workshop", name:"Kis Műhely", tier:0, unlock:BigNum.fromNumber(0),
+    baseCost:BigNum.fromNumber(25), baseProd:BigNum.fromNumber(0.8),
+    pos:{x:0,y:0}, theme:"#7aa6ff"
+  },
+  { id:"robot", name:"Robot Üzem", tier:1, unlock:BigNum.fromNumber(1e4),
+    baseCost:BigNum.fromNumber(600), baseProd:BigNum.fromNumber(8),
+    pos:{x:520,y:-220}, theme:"#5b7cfa"
+  },
+  { id:"line", name:"Automata Sor", tier:1, unlock:BigNum.fromNumber(5e4),
+    baseCost:BigNum.fromNumber(3200), baseProd:BigNum.fromNumber(36),
+    pos:{x:-620,y:-140}, theme:"#6bd6ff"
+  },
+  { id:"ai", name:"AI Gyár", tier:2, unlock:BigNum.fromNumber(2e5),
+    baseCost:BigNum.fromNumber(22000), baseProd:BigNum.fromNumber(220),
+    pos:{x:740,y:380}, theme:"#7cfab0"
+  },
+  { id:"quant", name:"Kvantum Bank",
+tier:2, unlock:BigNum.fromNumber(1e6),
+    baseCost:BigNum.fromNumber(140000), baseProd:BigNum.fromNumber(1500),
+    pos:{x:-880,y:520}, theme:"#b68cff"
+  },
+  { id:"time", name:"Időerőmű", tier:3, unlock:BigNum.fromNumber(5e6),
+    baseCost:BigNum.fromNumber(1200000), baseProd:BigNum.fromNumber(12000),
+    pos:{x:1220,y:-640}, theme:"#ffcf40"
+  },
+  { id:"multi", name:"Multiverzum Üzem", tier:4, unlock:BigNum.fromNumber(2e7),
+    baseCost:BigNum.fromNumber(9000000), baseProd:BigNum.fromNumber(98000),
+    pos:{x:-1320,y:-820}, theme:"#ff7cf0"
+  },
+  { id:"weaver", name:"Dimenzió Szövő", tier:5, unlock:BigNum.fromNumber(1e8),
+    baseCost:BigNum.fromNumber(70000000), baseProd:BigNum.fromNumber(900000),
+    pos:{x:40,y:1220}, theme:"#ffffff"
+  }
 ];
 
-function save(){
- localStorage.setItem("tycoon_full",JSON.stringify(state));
+// Factory modules per type (credits-based + essence-based)
+const MODULES = [
+  { id:"eff", name:"Hatékonyság", desc:"+25% termelés / szint", kind:"credit", base:BigNum.fromNumber(500) },
+  { id:"cost", name:"Költség-lapítás", desc:"Árnövekedés -4%", kind:"credit", base:BigNum.fromNumber(1800) },
+  { id:"crit", name:"Túlpörgés", desc:"Néha x5 termelés (esély nő)", kind:"credit", base:BigNum.fromNumber(4200) },
+  { id:"ess_boost", name:"Esszencia-reaktor", desc:"+100% termelés", kind:"ess", baseCost:2 },
+];
+
+// Essence tree nodes (prestige currency)
+const ESS_TREE = [
+  { id:"e1", name:"⏱ Futásindító", desc:"Futás elején +x2 globál", cost:2, prereq:[] },
+  { id:"e2", name:"🧬 Szorzó-mágnes", desc:"Minden gyár szintlépés +2% helyett +3%", cost:4, prereq:["e1"] },
+  { id:"e3", name:"🤖 AI gyorsnyitás", desc:"ROI-AI feloldás ára -40%", cost:3, prereq:["e1"] },
+  { id:"e4", name:"💾 Offline boost", desc:"Offline termelés hatékonyabb (x2 cap)", cost:5, prereq:["e2"] },
+  { id:"e5", name:"⚙️ Árnövekedés-lapítás", desc:"Alap árfaktor 1.18 → 1.16", cost:6, prereq:["e2"] },
+  { id:"e6", name:"✨ Prestige hozam +1", desc:"Prestige Esszencia tier +1", cost:7, prereq:["e3","e4"] }
+];
+
+// Infinity tree (tokens)
+const INF_TREE = [
+  // passives
+  { id:"i1", name:"♾️ Start Burst", desc:"Prestige után 60mp x10 globál", type:"passive", cost:1, prereq:[] },
+  { id:"i2", name:"♾️ Flatten Cost", desc:"Árnövekedés -8% (stackelhető)", type:"passive", cost:1, prereq:["i1"] },
+  { id:"i3", name:"♾️ Essence Amp", desc:"Prestige Esszencia tier kétszereződik", type:"passive", cost:2, prereq:["i2"] },
+  { id:"i4", name:"♾️ Offline 100%", desc:"Offline termelés 100% hatékony (nagy cap)", type:"passive", cost:2, prereq:["i2"] },
+  // toggles
+  { id:"t1", name:"⏩ Time Warp", desc:"Tick sebesség x5", type:"toggle", cost:1, prereq:["i1"] },
+  { id:"t2", name:"🌀 Exponent Mode", desc:"Globál szorzó hatványoz (OP)", type:"toggle", cost:2, prereq:["i2"] },
+  { id:"t3", name:"🤖 Full AI", desc:"Auto-level + auto-modul (agresszív)", type:"toggle", cost:2, prereq:["i3"] },
+];
+
+/* =========================
+   2) State
+   ========================= */
+function defaultState(){
+  const factories = {};
+  for(const t of FACTORY_TYPES){
+    factories[t.id] = {
+      id:t.id, typeId:t.id, x:t.pos.x,
+y:t.pos.y,
+      level:0, // 0 = még nincs megépítve (de lehet feloldva)
+      modules:{}, // moduleId -> level (int)
+      unlocked:false,
+      aiUnlocked:false,
+      particles:[]
+    };
+  }
+  return {
+    ver:SAVE_VER,
+    // currencies
+    money: {m:0,e:0},
+    essence: 0,
+    infTokens: 0,
+    // meta
+    prestigeCount: 0,
+    runMax: {m:0,e:0},
+    bestTier: 0, // esszencia tier elért maximum (anti-farm)
+    // trees
+    essNodes: {}, // id->true
+    infNodes: {}, // id->true
+    toggles: {}, // toggle id->bool active
+    // automation global
+    globalAIUnlocked:false,
+    // camera
+    cam:{x:0,y:0,zoom:1},
+    // time
+    lastSave: Date.now(),
+    burstUntil: 0, // inf passive i1
+    // ui
+    seenUnlocks:{},
+    // statistics
+totalClicks:0
+  };
 }
 
-function fmt(n){
- if(n>=1e9)return(n/1e9).toFixed(2)+"B";
- if(n>=1e6)return(n/1e6).toFixed(2)+"M";
- if(n>=1e3)return(n/1e3).toFixed(2)+"K";
- return Math.floor(n);
+let S = loadState();
+
+/* =========================
+   3) Save/Load + Offline
+   ========================= */
+function loadState(){
+  try{
+    const raw=localStorage.getItem(SAVE_KEY);
+    if(!raw) return defaultState();
+    const obj=JSON.parse(raw);
+    if(!obj || obj.ver!==SAVE_VER) return defaultState();
+    return obj;
+  }catch(e){ return defaultState(); }
+}
+const now=Date.now();
+  const dtSec=Math.max(0, Math.min( (now - (S.lastSave||now))/1000, getOfflineCapSeconds() ));
+  if(dtSec<=1) return;
+  const perSec = computePerSecond();
+  const gain = perSec.mulFloat(dtSec);
+  const m = bnFromObj(S.money).add(gain);
+  S.money = bnToObj(m);
+  // max update
+  updateRunMax(m);
+  toast("💤 Offline termelés", `+${gain.toShort()} 💰 (${Math.floor(dtSec)} mp)`);
 }
 
-function tap(){
- state.money += 10 * state.global;
- render();
+/* =========================
+   4) UI helpers
+   ========================= */
+let toastTimer=null;
+function toast(title,msg){
+  const el=document.getElementById("toast");
+  document.getElementById("toastT").textContent=title;
+  document.getElementById("toastM").textContent=msg;
+  el.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>el.classList.remove("show"), 2600);
+}
+  S.lastSave=Date.now();
+  localStorage.setItem(SAVE_KEY, JSON.stringify(S));
+  document.getElementById("saveInfo").textContent =
+    "Utolsó mentés: " + new Date(S.lastSave).toLocaleString();
+}
+function bnFromObj(o){ return new BigNum(o.m,o.e); }
+function bnToObj(bn){ return {m:bn.m,e:bn.e}; }
+
+function applyOfflineProgress(){
+function openPanel(id){
+  for(const p of ["factoryPanel","roadmapPanel","treesPanel","settingsPanel"]){
+    document.getElementById(p).classList.remove("open");
+  }
+  document.getElementById(id).classList.add("open");
+}
+function closePanels(){
+  for(const p of ["factoryPanel","roadmapPanel","treesPanel","settingsPanel"]){
+    document.getElementById(p).classList.remove("open");
+  }
 }
 
-function buy(i){
- let o=state.owned[i]||0;
- let cost=factories[i].c*Math.pow(1.25,o);
- if(state.money>=cost){
-  state.money-=cost;
-  state.owned[i]=o+1;
-  state.global*=1.015;
- }
+/* =========================
+   5) Economy rules
+   ========================= */
+function getBaseCostGrowth(){
+  // alap 1.18; ess+inf csökkentheti
+  let g = hasEss("e5") ? 1.16 : 1.18;
+  if(hasInf("i2")) g *= 0.92; // -8%
+  return Math.max(1.08, g);
+}
+function getLevelUpCost(factory){
+  const type = FACTORY_TYPES.find(t=>t.id===factory.typeId);
+  const lvl = factory.level;
+  const g = getBaseCostGrowth();
+  // cost = baseCost * g^(lvl) * (1 + tier*0.25)
+let cost = type.baseCost.mulFloat(1 + type.tier*0.25).mulFloat(Math.pow(g, lvl));
+  // module cost reducer
+  const costMod = (factory.modules["cost"]||0);
+  if(costMod>0){
+    const factor = Math.pow(0.96, costMod); // each level -4%
+    cost = cost.mulFloat(factor);
+  }
+  return cost;
+}
+function getModuleCost(factory, moduleId){
+  const mod = MODULES.find(m=>m.id===moduleId);
+  const lvl = factory.modules[moduleId]||0;
+  if(mod.kind==="credit"){
+    // base * 1.35^lvl * (1+tier*0.15)
+    const type = FACTORY_TYPES.find(t=>t.id===factory.typeId);
+    return mod.base.mulFloat(Math.pow(1.35,lvl)).mulFloat(1+type.tier*0.15);
+  }else{
+    // essence cost levels: baseCost + lvl
+    return mod.baseCost + lvl;
+  }
+}
+function factoryProduction(factory){
+  if(!factory.unlocked || factory.level<=0) return BigNum.zero();
+  const type = FACTORY_TYPES.find(t=>t.id===factory.typeId);
+const lvl = factory.level;
+
+  // base production grows with level (power curve)
+  let prod = type.baseProd.mulFloat( Math.pow(lvl, 1.18) );
+
+  // modules
+  const eff = factory.modules["eff"]||0;
+  if(eff>0) prod = prod.mulFloat( Math.pow(1.25, eff) ); // +25% each
+  const essBoost = factory.modules["ess_boost"]||0;
+  if(essBoost>0) prod = prod.mulFloat( Math.pow(2, essBoost) ); // +100% each
+
+  // global multiplier: increases with total built levels; ess tree can raise
+  let glob = getGlobalMultiplier();
+  prod = prod.mulFloat(glob);
+
+  // critical bursts (from module crit)
+  const crit = factory.modules["crit"]||0;
+  if(crit>0){
+    const chance = Math.min(0.20, 0.02*crit); // up to 20%
+    if(Math.random() < chance) prod = prod.mulFloat(5);
+  }
+  return prod;
+}
+function getTotalLevels(){
+  let s=0;
+  for(const id in S.factories){
+    const f=S.factories[id];
+    if(f.level>0) s+=f.level;
+  }
+  return s;
+}
+function getGlobalMultiplier(){
+  // base: 1 + each level adds 2% or 3% with ess upgrade
+  const per = hasEss("e2") ? 0.03 : 0.02;
+  let glob = 1 + getTotalLevels()*per;
+  // ess nodes
+  if(hasEss("e1")) glob *= 2;
+  // infinity passive burst
+  if(Date.now() < S.burstUntil) glob *= 10;
+  // infinity toggle exponent mode
+  if(isToggleOn("t2")){ // OP: exponentiate
+    glob = Math.pow(glob, 1.35);
+  }
+  return glob;
+}
+function computePerSecond(){
+  let sum=BigNum.zero();
+  for(const id in S.factories){
+    sum = sum.add(factoryProduction(S.factories[id]));
+  }
+  // Time warp toggle increases tick speed => effectively per sec *5
+  if(isToggleOn("t1")) sum =
+sum.mulFloat(5);
+  return sum;
+}
+function updateRunMax(moneyBN){
+  const max = bnFromObj(S.runMax);
+  if(moneyBN.gte(max)){
+    S.runMax = bnToObj(moneyBN);
+  }
+}
+function getPrestigeEligible(){
+  return bnFromObj(S.money).gte(BigNum.fromME(1,9)); // >= 1e9
+}
+function getEssenceTierFromMax(maxBN){
+  // tier = floor(log10(max)/3)
+  const l=maxBN.log10();
+  if(!isFinite(l) || l<0) return 0;
+  return Math.floor(l/3);
+}
+function getEssenceGainPreview(){
+  const maxBN=bnFromObj(S.runMax);
+  let tier=getEssenceTierFromMax(maxBN);
+  // ess node e6 adds +1 tier
+  if(hasEss("e6")) tier+=1;
+  // inf node i3 doubles tier
+  if(hasInf("i3")) tier*=2;
+  // anti-farm: only gain if tier > bestTier
+  const gain=Math.max(0, tier - (S.bestTier||0));
+  return gain;
+}
+function doPrestige(){
+  if(!getPrestigeEligible()) return;
+  const gain=getEssenceGainPreview();
+if(gain<=0){
+    toast("🌍 Prestige", "Most nem ad új Esszenciát. Érd el egy magasabb max pénzt!");
+    return;
+  }
+  if(!confirm(`Prestige? (+${gain} ✨) Minden gyárszint és pénz resetelődik.`)) return;
+
+  S.essence += gain;
+  S.bestTier = (S.bestTier||0) + gain; // lépcsőzetesen nő
+  S.prestigeCount++;
+
+  // reset run-specific
+  S.money = {m:0,e:0};
+  S.runMax = {m:0,e:0};
+  // reset factories levels + credit modules, keep unlock states but lock if under unlock? We'll keep unlocked flags based on money (will update)
+  for(const id in S.factories){
+    S.factories[id].level=0;
+    S.factories[id].modules={};
+    S.factories[id].aiUnlocked=false;
+    S.factories[id].particles=[];
+  }
+  S.globalAIUnlocked=false;
+
+  // apply infinity passive burst after prestige if owned
+  if(hasInf("i1")) S.burstUntil = Date.now() + 60*1000;
+toast("🌍 Prestige sikerült", `+${gain} ✨ Esszencia. Új futás indul!`);
+  closePanels();
+  saveState();
+}
+function doInfinityEnter(){
+  // +1 token
+  S.infTokens = (S.infTokens||0) + 1;
+
+  // hard reset everything except inf tokens + inf tree + settings
+  S.money={m:0,e:0};
+  S.essence=0;
+  S.prestigeCount=0;
+  S.runMax={m:0,e:0};
+  S.bestTier=0;
+  S.essNodes={};
+  S.toggles={};
+  S.globalAIUnlocked=false;
+  S.seenUnlocks={};
+
+  for(const id in S.factories){
+    S.factories[id].level=0;
+    S.factories[id].modules={};
+    S.factories[id].aiUnlocked=false;
+    S.factories[id].particles=[];
+    S.factories[id].unlocked=false;
+  }
+
+  // Infinity passives remain (infNodes)
+  // if i1 owned => start burst
+  if(hasInf("i1")) S.burstUntil = Date.now() + 60*1000;
+
+  saveState();
+  hideInfinity();
+toast("♾️ Végtelen", "+1 Végtelen token. Új dimenzió indul!");
 }
 
-function skill(id,cost){
- if(state.skills[id]||state.essence<cost) return;
- state.essence-=cost;
- state.skills[id]=true;
+/* =========================
+   6) Unlocks + Roadmap
+   ========================= */
+function updateUnlocks(){
+  const money=bnFromObj(S.money);
+  for(const t of FACTORY_TYPES){
+    const f=S.factories[t.id];
+    const unlocked = money.gte(t.unlock);
+    if(unlocked && !f.unlocked){
+      f.unlocked=true;
+      // unlock animation trigger
+      if(!S.seenUnlocks[t.id]){
+        S.seenUnlocks[t.id]=true;
+        toast("🔓 Új gyár feloldva", `${t.name} elérhető!`);
+        addUnlockFlare(f.x,f.y,t.theme);
+      }
+    }
+  }
+}
+function buildRoadmap(){
+  const body=document.getElementById("rmBody");
+  body.innerHTML="";
+  const money=bnFromObj(S.money);
 
- if(id==="s1") state.global*=2;
- if(id==="s2") state.global*=5;
- if(id==="s3") state.global*=10;
+  for(const t of FACTORY_TYPES){
+    const f=S.factories[t.id];
+    const isU = money.gte(t.unlock);
+    const card=document.createElement("div");
+    card.className="card";
+const left = `<div class="h">${isU?"✅":"🔒"} ${t.name}</div>
+                  <div class="small">Feloldás: <b>${t.unlock.toShort()} 💰</b> • Tier: ${t.tier}</div>
+                  <div class="small">Pozíció: (${Math.round(f.x)}, ${Math.round(f.y)})</div>`;
+    const btn = `<button class="btn secondary" data-go="${t.id}">Ugorj oda</button>`;
+    card.innerHTML = `<div class="row"><div class="grow">${left}</div>${btn}</div>`;
+    body.appendChild(card);
+  }
+  body.querySelectorAll("button[data-go]").forEach(b=>{
+    b.onclick=()=>{
+      const id=b.getAttribute("data-go");
+      const f=S.factories[id];
+      camera.x=f.x; camera.y=f.y;
+      closePanels();
+    };
+  });
 }
 
-function prestige(){
- state.money=0;
- state.owned={};
- state.prestige++;
- state.global*=2;
- save();
- location.reload();
+/* =========================
+   7) Trees UI
+   ========================= */
+function hasEss(id){ return !!S.essNodes?.[id]; }
+function hasInf(id){ return !!S.infNodes?.[id]; }
+function isToggleOn(id){ return !!S.toggles?.[id]; }
+
+function buyEssNode(id){
+  const node=ESS_TREE.find(n=>n.id===id);
+  if(!node) return;
+  if(hasEss(id)) return;
+  if(node.prereq.some(p=>!hasEss(p))) return;
+  if(S.essence < node.cost) return;
+  S.essence -= node.cost;
+  S.essNodes[id]=true;
+  toast("✨ Esszencia fejlesztés", `${node.name} aktiválva!`);
+  saveState();
+  renderTrees();
+}
+function buyInfNode(id){
+  const node=INF_TREE.find(n=>n.id===id);
+  if(!node) return;
+  if(hasInf(id)) return;
+  if(node.prereq.some(p=>!hasInf(p))) return;
+  if(S.infTokens < node.cost) return;
+
+  S.infTokens -= node.cost;
+  S.infNodes[id]=true;
+  // toggles default off
+  if(node.type==="toggle"){ S.toggles[id]=false; }
+  toast("♾️ Végtelen fejlesztés", `${node.name} megszerezve!`);
+  saveState();
+  renderTrees();
+}
+function toggleInf(id){
+const node=INF_TREE.find(n=>n.id===id);
+  if(!node || node.type!=="toggle" || !hasInf(id)) return;
+  const on = !!S.toggles[id];
+  if(on){
+    S.toggles[id]=false;
+    saveState(); renderTrees();
+    return;
+  }
+  // limit: max 2 toggles ON
+  const onCount = Object.keys(S.toggles||{}).filter(k=>S.toggles[k]).length;
+  if(onCount>=2){
+    toast("⚠️ Toggle limit", "Egyszerre max 2 aktív toggle lehet.");
+    return;
+  }
+  S.toggles[id]=true;
+  saveState(); renderTrees();
+}
+function renderTrees(){
+  document.getElementById("essTxt").textContent = S.essence|0;
+  document.getElementById("infTxt").textContent = S.infTokens|0;
+
+  // Ess tree
+  const ess=document.getElementById("essTree");
+  ess.innerHTML="";
+  for(const n of ESS_TREE){
+    const ok = n.prereq.every(p=>hasEss(p));
+    const owned = hasEss(n.id);
+const can = ok && !owned && S.essence>=n.cost;
+    const div=document.createElement("div");
+    div.className="node " + (owned?"unlocked":(!ok?"locked":""));
+    div.innerHTML = `
+      <div class="name">${n.name}</div>
+      <div class="desc">${n.desc}</div>
+      <div class="foot">
+        <div class="cost">Költség: <b>${n.cost} ✨</b></div>
+        <button class="btn ${owned?'secondary':''}" ${can?'':'disabled'}>${owned?'Megvan':'Veszem'}</button>
+      </div>
+    `;
+    const btn=div.querySelector("button");
+    btn.onclick=()=>buyEssNode(n.id);
+    if(owned) btn.disabled=true;
+    ess.appendChild(div);
+  }
+
+  // Inf tree
+  const inf=document.getElementById("infTree");
+  inf.innerHTML="";
+  for(const n of INF_TREE){
+    const ok = n.prereq.every(p=>hasInf(p));
+    const owned = hasInf(n.id);
+    const can = ok && !owned && S.infTokens>=n.cost;
+    const
+div=document.createElement("div");
+    div.className="node " + (owned?"unlocked":(!ok?"locked":""));
+    const rightBtnLabel = owned ? (n.type==="toggle" ? (isToggleOn(n.id)?"ON":"OFF") : "Megvan") : "Veszem";
+    div.innerHTML = `
+      <div class="name">${n.name}</div>
+      <div class="desc">${n.desc}</div>
+      <div class="foot">
+        <div class="cost">Költség: <b>${n.cost} ♾️</b></div>
+        <button class="btn ${owned?'secondary':''}" ${can||owned?'':'disabled'}>${rightBtnLabel}</button>
+      </div>
+    `;
+    const btn=div.querySelector("button");
+    if(!owned){
+      btn.onclick=()=>buyInfNode(n.id);
+    }else if(n.type==="toggle"){
+      btn.onclick=()=>toggleInf(n.id);
+    }else{
+      btn.disabled=true;
+    }
+    inf.appendChild(div);
+  }
+
+  // Prestige preview
+  const maxBN=bnFromObj(S.runMax);
+  document.getElementById("maxRunTxt").textContent = maxBN.toShort()+" 💰";
+document.getElementById("essGainTxt").textContent = getEssenceGainPreview();
+  document.getElementById("btnPrestige").disabled = !getPrestigeEligible() || getEssenceGainPreview()<=0;
+  document.getElementById("prestigeHint").textContent =
+    getPrestigeEligible()
+      ? (getEssenceGainPreview()>0 ? "Megéri: új Esszencia tier elérve." : "Még nem nőtt a tier. Menj nagyobb max pénzre.")
+      : "Előbb érd el az 1e9 💰-t.";
 }
 
-function render(){
- document.getElementById("money").innerText=fmt(state.money)+" 💰";
- document.getElementById("essence").innerText=state.essence;
+/* =========================
+   8) Automation (ROI-AI)
+   ========================= */
+function getAICostCredits(){
+  // base unlock cost: 2e6 credits (reduced by ess node e3)
+  const base = BigNum.fromNumber(2e6);
+  const factor = hasEss("e3") ? 0.6 : 1;
+  return base.mulFloat(factor);
+}
+function unlockAI(factory){
+  const cost=getAICostCredits();
+  const money=bnFromObj(S.money);
+  if(!money.gte(cost)){
+    toast("🤖 ROI-AI", "Nincs elég pénz a feloldáshoz.");
+    return;
+  }
+S.money = bnToObj(money.sub(cost));
+  factory.aiUnlocked=true;
+  toast("🤖 ROI-AI feloldva", "Mostantól a gyár automatikusan okosan fejleszt.");
+  saveState();
+}
+function runAutomation(){
+  // Full AI toggle => automodul is
+  const full = isToggleOn("t3");
 
- let f=document.getElementById("factories");
- f.innerHTML="";
- factories.forEach((x,i)=>{
-  let unlocked=state.money>=x.u;
-  let o=state.owned[i]||0;
-  let prod=x.p*(1+o*0.15)*o*state.global;
-  let cost=x.c*Math.pow(1.25,o);
+  for(const id in S.factories){
+    const f=S.factories[id];
+    if(!f.unlocked) continue;
+    if(!f.aiUnlocked) continue;
 
-  f.innerHTML+=`
-   <div class="${unlocked?"":"locked"}">
-    <b>${unlocked?x.n:"🔒 "+x.n}</b>
-    <div class="small">${unlocked?`+${prod.toFixed(1)}/mp`:`Feloldás: ${fmt(x.u)} 💰`}</div>
-    ${unlocked?`<button onclick="buy(${i})">${fmt(cost)} 💰</button>`:""}
-   </div>`;
- });
+    // ROI: compare leveling vs best module upgrade
+    // ROI approx: deltaProd / cost
+    const money=bnFromObj(S.money);
 
- if(state.money>=1e6) document.getElementById("essPanel").style.display="block";
- if(state.money>=1e8) document.getElementById("prestigePanel").style.display="block";
+    // candidate 1: level up
+    const costL = getLevelUpCost(f);
+    const prodNow = factoryProduction(f);
+    const lvl=f.level;
+    const prodAfter = (()=>{ const tmp=JSON.parse(JSON.stringify(f)); tmp.level=lvl+1; return factoryProduction(tmp); })();
+    const deltaL = prodAfter.sub(prodNow);
+    const roiL = deltaL.log10() - costL.log10(); // log ROI
 
- Object.keys(state.skills).forEach(id=>{
-  document.getElementById(id).classList.add("unlocked");
-  if(id==="s1") document.getElementById("s2").classList.remove("locked");
-  if(id==="s2") document.getElementById("s3").classList.remove("locked");
- });
+    let best = {kind:"level", roi:roiL, cost:costL};
+ // candidate 2: modules (credits only, unless full AI and have essence modules?)
+    for(const mod of MODULES){
+      if(mod.kind==="ess") continue;
+      const costM=getModuleCost(f, mod.id);
+      const after = (()=>{ const tmp=JSON.parse(JSON.stringify(f)); tmp.modules[mod.id]=(tmp.modules[mod.id]||0)+1; return factoryProduction(tmp); })();
+      const delta=after.sub(prodNow);
+      const roi = delta.log10() - costM.log10();
+      if(roi>best.roi) best={kind:"mod", modId:mod.id, roi, cost:costM};
+    }
 
- save();
+    // full AI can buy essence module if available
+    if(full){
+      const mod = MODULES.find(m=>m.id==="ess_boost");
+      const costEss = getModuleCost(f, "ess_boost"); // numeric
+      if(S.essence>=costEss){
+        // estimate ROI as huge
+        if(best.kind!=="ess" && 999>best.roi) best={kind:"ess", modId:"ess_boost", roi:999, costEss};
+      }
+    }
+
+    // buy if affordable
+    if(best.kind==="level"){
+      if(money.gte(best.cost)){
+S.money = bnToObj(money.sub(best.cost));
+        f.level += 1;
+        // visual bump: particles refresh
+        if(f.level%10===0) addLevelPop(f.x,f.y);
+        break; // one action per tick for stability
+      }
+    }else if(best.kind==="mod"){
+      if(money.gte(best.cost)){
+        S.money = bnToObj(money.sub(best.cost));
+        f.modules[best.modId]=(f.modules[best.modId]||0)+1;
+        addLevelPop(f.x,f.y);
+        break;
+      }
+    }else if(best.kind==="ess"){
+      const costEss = best.costEss;
+      if(S.essence>=costEss){
+        S.essence -= costEss;
+        f.modules["ess_boost"]=(f.modules["ess_boost"]||0)+1;
+        addLevelPop(f.x,f.y);
+        break;
+      }
+    }
+  }
 }
 
-setInterval(()=>{
- let gain=0;
- factories.forEach((x,i)=>{
-  let o=state.owned[i]||0;
-  gain+=x.p*(1+o*0.15)*o*state.global;
- });
- state.money+=gain;
- if(state.money>=1e9 && state.essence===0) state.essence=1;
- render();
-},1000);
+/* =========================
+   9) Canvas map + rendering
+   ========================= */
+const canvas=document.getElementById("canvas");
+const ctx=canvas.getContext("2d");
+let W=0,H=0, DPR=1;
 
-render();
+const camera = {
+  get x(){return S.cam.x;}, set x(v){S.cam.x=v;},
+  get y(){return S.cam.y;}, set y(v){S.cam.y=v;},
+  get zoom(){return S.cam.zoom;}, set zoom(v){S.cam.zoom=v;}
+};
+
+function resize(){
+  DPR=Math.max(1, Math.min(2, window.devicePixelRatio||1));
+  W=canvas.clientWidth; H=canvas.clientHeight;
+  canvas.width=Math.floor(W*DPR); canvas.height=Math.floor(H*DPR);
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+}
+window.addEventListener("resize", resize);
+resize();
+
+function worldToScreen(x,y){
+  return {
+    x: (x - camera.x)*camera.zoom + W/2,
+    y: (y - camera.y)*camera.zoom + H/2
+  };
+}
+function screenToWorld(x,y){
+  return {
+x: (x - W/2)/camera.zoom + camera.x,
+    y: (y - H/2)/camera.zoom + camera.y
+  };
+}
+
+function drawBackground(){
+  // subtle grid + glow
+  ctx.fillStyle="#060711";
+  ctx.fillRect(0,0,W,H);
+
+  const grid=80*camera.zoom;
+  const ox = (W/2 - camera.x*camera.zoom)%grid;
+  const oy = (H/2 - camera.y*camera.zoom)%grid;
+  ctx.globalAlpha=0.22;
+  ctx.strokeStyle="rgba(255,255,255,.08)";
+  ctx.lineWidth=1;
+  for(let x=ox; x<W; x+=grid){
+    ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke();
+  }
+  for(let y=oy; y<H; y+=grid){
+    ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke();
+  }
+  ctx.globalAlpha=1;
+
+  // vignette
+  const g=ctx.createRadialGradient(W/2,H/2,Math.min(W,H)*0.2,W/2,H/2,Math.max(W,H)*0.7);
+  g.addColorStop(0,"rgba(124,250,176,0.05)");
+g.addColorStop(1,"rgba(0,0,0,0.55)");
+  ctx.fillStyle=g;
+  ctx.fillRect(0,0,W,H);
+}
+
+function drawFactory(f, type){
+  const p = worldToScreen(f.x,f.y);
+  const z = camera.zoom;
+  const size = (40 + type.tier*16) * z;
+  const lvl = f.level;
+
+  // locked ghost
+  if(!f.unlocked){
+    ctx.save();
+    ctx.globalAlpha=0.35;
+    ctx.strokeStyle="rgba(255,255,255,.25)";
+    ctx.fillStyle="rgba(255,255,255,.06)";
+    roundRect(p.x-size, p.y-size*0.6, size*2, size*1.2, 12*z, true, true);
+    ctx.fillStyle="rgba(255,255,255,.8)";
+    ctx.font=`${Math.max(12, 14*z)}px system-ui`;
+    ctx.textAlign="center";
+    ctx.fillText("🔒", p.x, p.y+5*z);
+    ctx.restore();
+    return;
+  }
+
+  // base building
+  const hue = type.tier*28 + 210;
+  const baseCol = type.theme;
+  const glow = Math.min(0.9, 0.12 + type.tier*0.08 + Math.min(0.25, lvl/180));
+ctx.save();
+  ctx.globalAlpha=1;
+
+  // glow aura
+  ctx.beginPath();
+  ctx.fillStyle = `rgba(91,124,250,${glow*0.22})`;
+  if(type.tier>=2) ctx.fillStyle = `rgba(124,250,176,${glow*0.22})`;
+  if(type.tier>=4) ctx.fillStyle = `rgba(255,124,240,${glow*0.18})`;
+  ctx.ellipse(p.x, p.y+size*0.45, size*1.1, size*0.55, 0, 0, Math.PI*2);
+  ctx.fill();
+
+  // building body
+  const bodyW = size*1.9;
+  const bodyH = size*(1.05 + Math.min(0.8, lvl/80));
+  ctx.fillStyle = "rgba(35,42,112,.85)";
+  ctx.strokeStyle = "rgba(255,255,255,.10)";
+  roundRect(p.x-bodyW/2, p.y-bodyH/2, bodyW, bodyH, 14*z, true, true);
+
+  // roof strip
+  ctx.fillStyle="rgba(255,255,255,.06)";
+  roundRect(p.x-bodyW/2, p.y-bodyH/2, bodyW, size*0.28, 14*z, true, false);
+
+  // tier accents
+  ctx.fillStyle = baseCol;
+  ctx.globalAlpha=0.18 + glow*0.15;
+  roundRect(p.x-bodyW/2 + size*0.10, p.y-bodyH/2 + size*0.34, bodyW - size*0.20, size*0.16, 99, true, false);
+ctx.globalAlpha=1;
+
+  // windows
+  const rows = 2 + Math.min(5, Math.floor(lvl/20));
+  const cols = 4 + type.tier;
+  ctx.fillStyle="rgba(124,250,176,.55)";
+  if(type.tier<=1) ctx.fillStyle="rgba(122,166,255,.55)";
+  if(type.tier>=4) ctx.fillStyle="rgba(255,124,240,.55)";
+  for(let r=0;r<rows;r++){
+    for(let c=0;c<cols;c++){
+      const wx = p.x - bodyW/2 + size*0.2 + c*(bodyW-size*0.4)/(cols);
+      const wy = p.y - bodyH/2 + size*0.55 + r*(bodyH-size*0.85)/rows;
+      const ww = size*0.12;
+      const wh = size*0.10;
+      ctx.globalAlpha = 0.25 + 0.55*Math.random();
+      ctx.fillRect(wx,wy,ww,wh);
+    }
+  }
+  ctx.globalAlpha=1;
+
+  // chimneys increase with level/tier
+  const chim = Math.min(5, 1 + Math.floor(lvl/25) + Math.floor(type.tier/2));
+  ctx.fillStyle="rgba(255,255,255,.12)";
+  for(let i=0;i<chim;i++){
+    const cx = p.x - bodyW/2 + size*0.25 + i*(size*0.28);
+    const cy = p.y - bodyH/2 - size*0.25;
+    roundRect(cx, cy, size*0.14,
+size*(0.35 + 0.18*Math.min(3, i+1)), 6*z, true, false);
+    // smoke particles spawn
+    if(lvl>=5 && Math.random()<0.18){
+      f.particles.push({x: f.x + (cx - p.x)/z, y: f.y + (cy - p.y)/z, vx:(Math.random()-0.5)*8, vy:-10-Math.random()*18, a:1, s:10+Math.random()*16});
+    }
+  }
+
+  // AI icon if unlocked
+  if(f.aiUnlocked){
+    ctx.font=`${Math.max(12, 14*z)}px system-ui`;
+    ctx.textAlign="left";
+    ctx.fillStyle="rgba(124,250,176,.9)";
+    ctx.fillText("🤖", p.x + bodyW/2 - size*0.45, p.y - bodyH/2 + size*0.25);
+  }
+
+  // Level badge
+  ctx.font=`${Math.max(11, 12*z)}px system-ui`;
+  ctx.textAlign="center";
+  ctx.fillStyle="rgba(0,0,0,.55)";
+  roundRect(p.x-size*0.55, p.y+bodyH/2 - size*0.38, size*1.1, size*0.32, 99, true, false);
+  ctx.fillStyle="rgba(255,255,255,.92)";
+  ctx.fillText(`Lv.${lvl}`, p.x, p.y+bodyH/2 - size*0.15);
+
+  // Name (small)
+  ctx.fillStyle="rgba(255,255,255,.65)";
+ctx.font=`${Math.max(10, 11*z)}px system-ui`;
+  ctx.fillText(type.name, p.x, p.y+bodyH/2 + size*0.18);
+
+  ctx.restore();
+}
+function roundRect(x,y,w,h,r,fill,stroke){
+  const rr=Math.min(r, w/2, h/2);
+  ctx.beginPath();
+  ctx.moveTo(x+rr,y);
+  ctx.arcTo(x+w,y, x+w,y+h, rr);
+  ctx.arcTo(x+w,y+h, x,y+h, rr);
+  ctx.arcTo(x,y+h, x,y, rr);
+  ctx.arcTo(x,y, x+w,y, rr);
+  if(fill) ctx.fill();
+  if(stroke) ctx.stroke();
+}
+
+function updateParticles(dt){
+  for(const id in S.factories){
+    const f=S.factories[id];
+    if(!f.particles) f.particles=[];
+    const keep=[];
+    for(const p of f.particles){
+      p.x += p.vx*dt;
+      p.y += p.vy*dt;
+      p.vy += -5*dt;
+      p.a -= 0.7*dt;
+      p.s *= (1 + 0.12*dt);
+      if(p.a>0) keep.push(p);
+    }
+    f.particles = keep.slice(-140);
+  }
+}
+function drawParticles(){
+  ctx.save();
+  ctx.globalCompositeOperation="lighter";
+  for(const id in S.factories){
+    const f=S.factories[id];
+    if(!f.particles) continue;
+    for(const p of f.particles){
+      const s=worldToScreen(p.x,p.y);
+      const r=(p.s*camera.zoom)*0.08;
+      ctx.globalAlpha=Math.max(0,Math.min(1,p.a))*0.22;
+      ctx.fillStyle="rgba(255,255,255,1)";
+      ctx.beginPath();
+      ctx.arc(s.x,s.y,r,0,Math.PI*2);
+      ctx.fill();
+    }
+  }
+  ctx.restore();
+}
+
+// Unlock/Level pop effects
+const flares=[];
+function addUnlockFlare(x,y,color){
+  flares.push({x,y,t:0,kind:"unlock",color});
+}
+function addLevelPop(x,y){
+  flares.push({x,y,t:0,kind:"pop",color:"#7cfab0"});
+}
+function updateFlares(dt){
+  for(const f of flares) f.t+=dt;
+  while(flares.length && flares[0].t>1.2) flares.shift();
+}
+function drawFlares(){
+  ctx.save();
+  ctx.globalCompositeOperation="lighter";
+  for(const f of flares){
+    const s=worldToScreen(f.x,f.y);
+    const z=camera.zoom;
+    if(f.kind==="unlock"){
+      const t=f.t;
+      const r=(20 + t*110)*z;
+      ctx.globalAlpha=Math.max(0, 0.55 - t*0.45);
+      ctx.strokeStyle=f.color;
+      ctx.lineWidth=3*z;
+      ctx.beginPath();
+      ctx.arc(s.x,s.y,r,0,Math.PI*2);
+      ctx.stroke();
+      ctx.globalAlpha=Math.max(0, 0.40 - t*0.35);
+      ctx.beginPath();
+      ctx.arc(s.x,s.y,r*0.72,0,Math.PI*2);
+      ctx.stroke();
+    }else{
+      const t=f.t;
+      const r=(10 + t*60)*z;
+      ctx.globalAlpha=Math.max(0, 0.35 - t*0.28);
+      ctx.fillStyle=f.color;
+      ctx.beginPath();
+      ctx.arc(s.x,s.y,r,0,Math.PI*2);
+      ctx.fill();
+    }
+  }
+  ctx.restore();
+}
+let selectedFactoryId=null;
+
+/* =========================
+   10) Input: drag + zoom + click
+   ========================= */
+let dragging=false, dragStart=null, dragCam=null;
+let moved=false;
+let pointers=new Map(); // pointerId -> {x,y}
+let pinchStartDist=null;
+let pinchStartZoom=1;
+
+canvas.addEventListener("pointerdown", (e)=>{
+  canvas.setPointerCapture(e.pointerId);
+  pointers.set(e.pointerId, {x:e.clientX,y:e.clientY});
+  if(pointers.size===1){
+    dragging=true; moved=false;
+    dragStart={x:e.clientX,y:e.clientY};
+    dragCam={x:camera.x,y:camera.y};
+  }else if(pointers.size===2){
+    const pts=[...pointers.values()];
+    pinchStartDist=Math.hypot(pts[0].x-pts[1].x, pts[0].y-pts[1].y);
+    pinchStartZoom=camera.zoom;
+  }
+});
+
+canvas.addEventListener("pointermove",(e)=>{
+  if(!pointers.has(e.pointerId)) return;
+  pointers.set(e.pointerId, {x:e.clientX,y:e.clientY});
+if(pointers.size===2){
+    const pts=[...pointers.values()];
+    const d=Math.hypot(pts[0].x-pts[1].x, pts[0].y-pts[1].y);
+    if(pinchStartDist){
+      const factor=d/pinchStartDist;
+      camera.zoom = clamp(pinchStartZoom*factor, 0.35, 2.2);
+      moved=true;
+    }
+    return;
+  }
+  if(!dragging || !dragStart) return;
+  const dx=(e.clientX - dragStart.x);
+  const dy=(e.clientY - dragStart.y);
+  if(Math.hypot(dx,dy)>4) moved=true;
+  camera.x = dragCam.x - dx/camera.zoom;
+  camera.y = dragCam.y - dy/camera.zoom;
+});
+
+canvas.addEventListener("pointerup",(e)=>{
+  pointers.delete(e.pointerId);
+  if(pointers.size<2){ pinchStartDist=null; }
+  if(pointers.size===0){
+    dragging=false;
+    if(!moved){
+      // click select
+      const rect=canvas.getBoundingClientRect();
+      const sx=e.clientX-rect.left;
+      const sy=e.clientY-rect.top;
+      const w=screenToWorld(sx,sy);
+      const hit = hitFactory(w.x,w.y);
+      if(hit){
+selectFactory(hit);
+      }else{
+        closePanels();
+      }
+    }
+  }
+});
+
+canvas.addEventListener("wheel",(e)=>{
+  e.preventDefault();
+  const delta = -Math.sign(e.deltaY);
+  const oldZ=camera.zoom;
+  const newZ=clamp(oldZ*(delta>0?1.08:0.92), 0.35, 2.2);
+  // zoom around mouse position
+  const rect=canvas.getBoundingClientRect();
+  const mx=e.clientX-rect.left, my=e.clientY-rect.top;
+  const before=screenToWorld(mx,my);
+  camera.zoom=newZ;
+  const after=screenToWorld(mx,my);
+  camera.x += (before.x-after.x);
+  camera.y += (before.y-after.y);
+},{passive:false});
+
+function clamp(v,a,b){ return Math.max(a,Math.min(b,v)); }
+
+function hitFactory(wx,wy){
+  // hit nearest in world space
+  let best=null, bestD=Infinity;
+  for(const t of FACTORY_TYPES){
+    const f=S.factories[t.id];
+    const d=Math.hypot(wx-f.x, wy-f.y);
+    const r=70 + t.tier*18;
+if(d<r && d<bestD){
+      bestD=d;
+      best=t.id;
+    }
+  }
+  return best;
+}
+
+/* =========================
+   11) Factory panel actions
+   ========================= */
+function selectFactory(id){
+  selectedFactoryId=id;
+  const f=S.factories[id];
+  const type=FACTORY_TYPES.find(t=>t.id===id);
+  openPanel("factoryPanel");
+  document.getElementById("fpTitle").textContent = type.name;
+  document.getElementById("fpSub").textContent = `Tier ${type.tier} • Pozíció: (${Math.round(f.x)}, ${Math.round(f.y)})`;
+  refreshFactoryPanel();
+}
+function refreshFactoryPanel(){
+  if(!selectedFactoryId) return;
+  const f=S.factories[selectedFactoryId];
+  const type=FACTORY_TYPES.find(t=>t.id===selectedFactoryId);
+
+  const unlocked=f.unlocked;
+  document.getElementById("fpUnlockedTag").style.display = unlocked ? "" : "none";
+document.getElementById("fpLockedTag").style.display = unlocked ? "none" : "";
+
+  const prod=factoryProduction(f);
+  document.getElementById("fpName").textContent = `${type.name} • Lv.${f.level}`;
+  document.getElementById("fpStats").textContent = `Termelés: ${prod.toShort()} / mp • Globál: x${getGlobalMultiplier().toFixed(2)}`;
+
+  const cost=getLevelUpCost(f);
+  document.getElementById("fpCost").textContent = `Szintlépés költség: ${cost.toShort()} 💰`;
+  const canLevel = unlocked && bnFromObj(S.money).gte(cost);
+  document.getElementById("btnLevelUp").disabled = !canLevel;
+  document.getElementById("btnLevelUp").textContent = unlocked ? `⬆️ Szintlépés (${cost.toShort()})` : "🔒 Zárolva";
+
+  // modules
+  const grid=document.getElementById("moduleGrid");
+  grid.innerHTML="";
+  for(const mod of MODULES){
+    // hide essence module until essence is available (nice UX)
+    if(mod.kind==="ess" && S.essence<=0 && (f.modules[mod.id]||0)===0) continue;
+const lvl=f.modules[mod.id]||0;
+    const div=document.createElement("div");
+    div.className="node";
+    const cost = mod.kind==="credit" ? getModuleCost(f,mod.id).toShort()+" 💰" : getModuleCost(f,mod.id)+" ✨";
+    const can = unlocked && (mod.kind==="credit"
+      ? bnFromObj(S.money).gte(getModuleCost(f,mod.id))
+      : (S.essence>=getModuleCost(f,mod.id)));
+    div.innerHTML=`
+      <div class="name">${mod.name} <span class="small">Lv.${lvl}</span></div>
+      <div class="desc">${mod.desc}</div>
+      <div class="foot">
+        <div class="cost">${cost}</div>
+        <button class="btn ${can?'':'secondary'}" ${can?'':'disabled'}>Veszem</button>
+      </div>
+    `;
+    div.querySelector("button").onclick=()=>{
+      if(!unlocked) return;
+      if(mod.kind==="credit"){
+        const c=getModuleCost(f,mod.id);
+        const money=bnFromObj(S.money);
+        if(!money.gte(c)) return;
+        S.money=bnToObj(money.sub(c));
+        f.modules[mod.id]=(f.modules[mod.id]||0)+1;
+      }else{
+const c=getModuleCost(f,mod.id);
+        if(S.essence<c) return;
+        S.essence-=c;
+        f.modules[mod.id]=(f.modules[mod.id]||0)+1;
+      }
+      addLevelPop(f.x,f.y);
+      saveState();
+      refreshFactoryPanel();
+    };
+    grid.appendChild(div);
+  }
+
+  // AI section
+  const aiCost=getAICostCredits();
+  document.getElementById("aiTag").textContent = f.aiUnlocked ? "✅ ROI-AI: aktív" : "🔒 ROI-AI: nincs";
+  document.getElementById("btnUnlockAI").disabled = f.aiUnlocked || !unlocked || !bnFromObj(S.money).gte(aiCost);
+  document.getElementById("btnUnlockAI").textContent = f.aiUnlocked ? "Megvan" : `Feloldás (${aiCost.toShort()})`;
+  document.getElementById("aiHint").textContent =
+    f.aiUnlocked
+      ? (isToggleOn("t3") ? "Full AI toggle ON: modulokat is vesz." : "AI: okos szint/modul választás.")
+      : "Feloldás után a gyár automatikusan fejleszt (mindig fut).";
+}
+document.getElementById("btnLevelUp").onclick=()=>{
+  const f=S.factories[selectedFactoryId];
+  if(!f.unlocked) return;
+  const cost=getLevelUpCost(f);
+  const money=bnFromObj(S.money);
+  if(!money.gte(cost)) return;
+  S.money = bnToObj(money.sub(cost));
+  f.level += 1;
+  if(f.level===1) toast("🏗️ Gyár megépítve", "Most már termel a térképen.");
+  addLevelPop(f.x,f.y);
+  saveState();
+  refreshFactoryPanel();
+};
+document.getElementById("btnCenter").onclick=()=>{
+  const f=S.factories[selectedFactoryId];
+  camera.x=f.x; camera.y=f.y;
+};
+document.getElementById("btnUnlockAI").onclick=()=>{
+  const f=S.factories[selectedFactoryId];
+  unlockAI(f);
+  refreshFactoryPanel();
+};
+
+document.getElementById("fpClose").onclick=()=>closePanels();
+
+/* =========================
+   12) Infinity overlay animation
+   ========================= */
+const infOverlay=document.getElementById("infinityOverlay");
+const infCanvas=document.getElementById("infCanvas");
+const infCtx=infCanvas.getContext("2d");
+let infW=0, infH=0, infStart=0, infAnimReq=null;
+
+function resizeInf(){
+  const rect=infCanvas.getBoundingClientRect();
+  infW=Math.floor(rect.width*DPR);
+  infH=Math.floor(rect.height*DPR);
+  infCanvas.width=infW; infCanvas.height=infH;
+}
+function showInfinity(){
+  infOverlay.classList.add("show");
+  resizeInf();
+  infStart=performance.now();
+  const loop=(t)=>{
+    drawInfinityAnim(t);
+    infAnimReq=requestAnimationFrame(loop);
+  };
+  if(infAnimReq) cancelAnimationFrame(infAnimReq);
+  infAnimReq=requestAnimationFrame(loop);
+}
+function hideInfinity(){
+  infOverlay.classList.remove("show");
+  if(infAnimReq) cancelAnimationFrame(infAnimReq);
+  infAnimReq=null;
+}
+window.addEventListener("resize", ()=>{ if(infOverlay.classList.contains("show")) resizeInf(); });
+function drawInfinityAnim(t){
+  const tt=(t-infStart)/1000;
+  const w=infW,h=infH;
+  infCtx.setTransform(1,0,0,1,0,0);
+  infCtx.clearRect(0,0,w,h);
+
+  // background stars + warp
+  infCtx.fillStyle="#050611";
+  infCtx.fillRect(0,0,w,h);
+
+  const cx=w*0.5, cy=h*0.45;
+  const pulse=0.5+0.5*Math.sin(tt*1.4);
+  const g=infCtx.createRadialGradient(cx,cy,10,cx,cy,Math.max(w,h)*0.6);
+  g.addColorStop(0,`rgba(124,250,176,${0.22+0.10*pulse})`);
+  g.addColorStop(0.35,`rgba(91,124,250,${0.10+0.06*pulse})`);
+  g.addColorStop(1,"rgba(0,0,0,0.92)");
+  infCtx.fillStyle=g; infCtx.fillRect(0,0,w,h);
+
+  // stars
+  infCtx.globalCompositeOperation="lighter";
+  for(let i=0;i<180;i++){
+    const a=i*12.9898;
+    const x=(Math.sin(a)*43758.5453)%1;
+    const y=(Math.sin(a*1.3)*19642.349)%1;
+    const sx=(x<0?x+1:x)*w;
+    const sy=(y<0?y+1:y)*h;
+    const tw=(0.5+0.5*Math.sin(tt*2 + i))*0.9;
+    infCtx.globalAlpha=0.25+0.35*tw;
+infCtx.fillStyle="rgba(255,255,255,1)";
+    infCtx.fillRect(sx,sy,1.5,1.5);
+  }
+  infCtx.globalAlpha=1;
+
+  // infinity symbol
+  infCtx.globalCompositeOperation="source-over";
+  const scale=1+0.06*Math.sin(tt*2.2);
+  infCtx.save();
+  infCtx.translate(cx, cy+20);
+  infCtx.scale(scale,scale);
+  infCtx.lineWidth=10;
+  infCtx.strokeStyle=`rgba(255,255,255,${0.35+0.25*pulse})`;
+  infCtx.shadowColor="rgba(124,250,176,0.45)";
+  infCtx.shadowBlur=28;
+  infCtx.beginPath();
+  // ∞ parametric-ish
+  for(let a=-Math.PI; a<=Math.PI; a+=0.02){
+    const denom = 1 + Math.sin(a)*Math.sin(a);
+    const x = 140*Math.cos(a)/denom;
+    const y = 70*Math.sin(a)*Math.cos(a)/denom;
+    if(a===-Math.PI) infCtx.moveTo(x,y);
+    else infCtx.lineTo(x,y);
+  }
+  infCtx.stroke();
+  infCtx.restore();
+
+  // glitch scanline
+  infCtx.globalAlpha=0.12;
+infCtx.fillStyle="rgba(255,255,255,1)";
+  const yline = (tt*120)%h;
+  infCtx.fillRect(0,yline,w,2);
+  infCtx.globalAlpha=1;
+}
+
+document.getElementById("btnInfClose").onclick=()=>hideInfinity();
+document.getElementById("btnStay").onclick=()=>hideInfinity();
+document.getElementById("btnEnterInfinity").onclick=()=>{
+  // cinematic flash
+  toast("♾️", "Dimenzióváltás...");
+  doInfinityEnter();
+};
+
+/* =========================
+   13) Buttons + panels
+   ========================= */
+document.getElementById("btnClick").onclick=()=>{
+  // click gives money based on global multiplier
+  const gain=BigNum.fromNumber(15).mulFloat(getGlobalMultiplier());
+  S.money=bnToObj(bnFromObj(S.money).add(gain));
+  S.totalClicks=(S.totalClicks||0)+1;
+  updateRunMax(bnFromObj(S.money));
+  saveState();
+  flashMoney();
+};
+function flashMoney(){
+  const el=document.getElementById("pMoney");
+el.style.filter="brightness(1.25)";
+  setTimeout(()=>el.style.filter="", 140);
+}
+
+document.getElementById("btnRoadmap").onclick=()=>{
+  buildRoadmap();
+  openPanel("roadmapPanel");
+};
+document.getElementById("rmClose").onclick=()=>closePanels();
+
+document.getElementById("btnTrees").onclick=()=>{
+  renderTrees();
+  openPanel("treesPanel");
+};
+document.getElementById("trClose").onclick=()=>closePanels();
+
+document.getElementById("btnSettings").onclick=()=>{
+  openPanel("settingsPanel");
+  document.getElementById("saveInfo").textContent =
+    "Utolsó mentés: " + new Date(S.lastSave||Date.now()).toLocaleString();
+};
+document.getElementById("stClose").onclick=()=>closePanels();
+
+document.getElementById("btnPrestige").onclick=()=>doPrestige();
+document.getElementById("btnExport").onclick=()=>{
+  const txt=btoa(unescape(encodeURIComponent(JSON.stringify(S))));
+  prompt("Mentés export (másold ki):", txt);
+};
+document.getElementById("btnImport").onclick=()=>{
+  const txt=prompt("Illeszd be az exportolt mentést:");
+  if(!txt) return;
+  try{
+    const json=decodeURIComponent(escape(atob(txt)));
+    const obj=JSON.parse(json);
+    if(obj && obj.ver===SAVE_VER){
+      S=obj;
+      saveState();
+      location.reload();
+    }else alert("Rossz mentés verzió.");
+  }catch(e){ alert("Nem sikerült importálni."); }
+};
+document.getElementById("btnWipe").onclick=()=>{
+  if(!confirm("Biztosan törlöd a teljes mentést?")) return;
+  localStorage.removeItem(SAVE_KEY);
+  location.reload();
+};
+document.getElementById("btnCenterAll").onclick=()=>{
+  camera.x=0; camera.y=0; camera.zoom=1;
+};
+document.getElementById("btnFast").onclick=()=>{
+  // +5 perc szimuláció
+  const dt=300;
+  const gain=computePerSecond().mulFloat(dt);
+  S.money=bnToObj(bnFromObj(S.money).add(gain));
+  updateRunMax(bnFromObj(S.money));
+  toast("⏩ Fast", `+${gain.toShort()} 💰 (5 perc)`);
+  saveState();
+};
+
+/* =========================
+   14) Main loop
+   ========================= */
+let lastT=performance.now();
+let acc=0;
+let frozen=false;
+
+function getOfflineCapSeconds(){
+  // base cap 2 hours; e4 doubles; i4 makes big
+  let cap=2*3600;
+  if(hasEss("e4")) cap*=2;
+  if(hasInf("i4")) cap=24*3600;
+  return cap;
+}
+
+function updateUI(){
+  const money=bnFromObj(S.money);
+  const perSec=computePerSecond();
+
+  document.getElementById("moneyTxt").textContent =
+money.toShort();
+  document.getElementById("perSecTxt").textContent = `(+${perSec.toShort()}/mp)`;
+  document.getElementById("essTxt").textContent = S.essence|0;
+  document.getElementById("infTxt").textContent = S.infTokens|0;
+
+  if(selectedFactoryId) refreshFactoryPanel();
+}
+
+function tickOneSecond(){
+  // update unlocks first
+  updateUnlocks();
+
+  // production
+  const perSec = computePerSecond();
+  const moneyBN = bnFromObj(S.money).add(perSec);
+  S.money = bnToObj(moneyBN);
+  updateRunMax(moneyBN);
+
+  // automation
+  runAutomation();
+
+  // Infinity check
+  if(moneyBN.gte(INF_THRESHOLD)){
+    // freeze and show
+    frozen=true;
+    showInfinity();
+  }
+}
+function loop(t){
+  const dt=(t-lastT)/1000;
+  lastT=t;
+
+  if(!frozen){
+    // time warp is already included in computePerSecond multiplier; but tick frequency still 1 sec.
+    acc += dt;
+    const step=1;
+    while(acc>=step){
+      tickOneSecond();
+      acc-=step;
+      if(frozen) break;
+    }
+  }
+
+  // update particles & effects using dt
+  updateParticles(dt);
+  updateFlares(dt);
+
+  // render
+  drawBackground();
+  drawParticles();
+  // factories
+  for(const typ of FACTORY_TYPES){
+    const f=S.factories[typ.id];
+    drawFactory(f, typ);
+  }
+  drawFlares();
+
+  updateUI();
+
+  requestAnimationFrame(loop);
+}
+function init(){
+  // ensure factories exist in save
+  if(!S.factories){
+    const base=defaultState();
+    S.factories=base.factories;
+  }
+  // ensure missing fields
+  S.essNodes=S.essNodes||{};
+  S.infNodes=S.infNodes||{};
+  S.toggles=S.toggles||{};
+  S.seenUnlocks=S.seenUnlocks||{};
+  S.cam=S.cam||{x:0,y:0,zoom:1};
+
+  applyOfflineProgress();
+
+  // initial unlock update
+  updateUnlocks();
+
+  // save timer
+  setInterval(()=>saveState(), 10000);
+  window.addEventListener("beforeunload", ()=>saveState());
+
+  saveState();
+  renderTrees();
+  requestAnimationFrame(loop);
+}
+
+/* =========================
+   15) Small helpers / sanity
+   ========================= */
+function safeFactoryInit(){
+  // ensure each factory from config exists
+  for(const t of FACTORY_TYPES){
+    if(!S.factories[t.id]){
+S.factories[t.id]={id:t.id,typeId:t.id,x:t.pos.x,y:t.pos.y,level:0,modules:{},unlocked:false,aiUnlocked:false,particles:[]};
+    }
+  }
+}
+safeFactoryInit();
+init();
 </script>
-
 </body>
 </html>
-  
