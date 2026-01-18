@@ -4,19 +4,27 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Infinity Tycoon – Város + Zónák (Early Boost • Hotfix)</title>
+<title>Infinity Tycoon – Város + Zónák (Long‑Term Balance)</title>
 <style>
-  :root{ --city-w:12; --city-h:8; --tile:76px;
+  :root{
+    --city-w:12; --city-h:8; --tile:76px;
     --ui-bg:rgba(22,22,28,.92); --ui-fg:#fff;
-    --grass1:#a7dba7; --grass2:#96d196; --road:#2a2a2f; --line:#e9e9ea; }
-  html,body{height:100%;margin:0;background:#0f1420;color:#fff;font:14px/1.4 system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans",Arial,sans-serif;}
+    --grass1:#a7dba7; --grass2:#96d196; --road:#2a2a2f; --line:#e9e9ea;
+  }
+  html,body{height:100%;margin:0;background:#0f1420;color:#fff;
+    font:14px/1.4 system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans",Arial,sans-serif;}
 
-  /* Ég */
-  body::before{content:"";position:fixed;inset:0;z-index:-3;
+  /* Ég + háttér sziluett */
+  body::before{
+    content:"";position:fixed;inset:0;z-index:-3;
     background:radial-gradient(1200px 500px at 80% -10%, #6fb1ff55, transparent 60%),
-               linear-gradient(180deg,#6fb1ff,#e4f1ff 45%,#cfe6ff 70%);}
-  body::after{content:"";position:fixed;left:0;right:0;bottom:0;height:38%;z-index:-2;opacity:.20;
-    background:linear-gradient(180deg,#1b2130 0%,#0f1420 65%);}
+               linear-gradient(180deg,#6fb1ff,#e4f1ff 45%,#cfe6ff 70%);
+  }
+  body::after{
+    content:"";position:fixed;left:0;right:0;bottom:0;height:38%;
+    z-index:-2; opacity:.20;
+    background:linear-gradient(180deg, #1b2130 0%, #0f1420 65%);
+  }
 
   /* HUD / Menü */
   #hud{position:fixed;left:12px;top:12px;z-index:6;background:var(--ui-bg);color:var(--ui-fg);
@@ -29,24 +37,25 @@
   #rnd h3{margin:.2rem 0 .4rem;font-size:14px}
   .upg-row{display:grid;grid-template-columns:1fr auto;gap:6px;align-items:center;margin:6px 0;padding:6px;border:1px solid #343a;border-radius:10px;background:#0e1118}
 
-  /* Város rétegek */
+  /* Város rétegek (pointer-events: none => nem blokkol klikket) */
   #city{position:fixed;inset:0;display:grid;place-items:center;z-index:1;}
   #city-wrap{position:relative}
   #ground{
-    position:absolute; inset:0; z-index:0; pointer-events:none;  /* HOTFIX */
+    position:absolute; inset:0; z-index:0; pointer-events:none;
     background:radial-gradient(60% 80% at 20% 20%, rgba(255,255,255,.07), transparent 60%),
-               linear-gradient(135deg,var(--grass1),var(--grass2));
+               linear-gradient(135deg, var(--grass1), var(--grass2));
     border-radius:24px; box-shadow:0 20px 60px rgba(0,0,0,.25);
   }
-  #zones,#decor,#roads{position:absolute; inset:0; border-radius:24px; overflow:hidden; pointer-events:none} /* HOTFIX */
+  #zones,#decor,#roads{position:absolute; inset:0; border-radius:24px; overflow:hidden; pointer-events:none}
   #zones{z-index:1} #decor{z-index:2} #roads{z-index:3}
 
   /* Láthatatlan katt-réteg */
   #city-grid{position:relative; z-index:4; display:grid; gap:0;
     grid-template-columns:repeat(var(--city-w), var(--tile));
     grid-template-rows:repeat(var(--city-h), var(--tile));
-    padding:0; border-radius:24px; background:transparent;}
-  .tile{ width:var(--tile); height:var(--tile); position:relative; user-select:none; cursor:pointer; background:transparent;}
+    padding:0; border-radius:24px; background:transparent;
+  }
+  .tile{ width:var(--tile); height:var(--tile); position:relative; user-select:none; cursor:pointer; background:transparent; }
   .tile.sel{ outline:3px solid #4cc; outline-offset:-2px; }
 
   /* Rom és gyár */
@@ -69,15 +78,19 @@
   .badge{position:absolute;right:6px;top:6px;background:#1a5;color:#fff;padding:2px 6px;border-radius:999px;font:12px/1.2 system-ui;box-shadow:0 1px 0 rgba(0,0,0,.4)}
   .badge.type{left:6px;right:auto;background:#2680eb}
 
-  /* Akciósáv + Toast */
-  #actions{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);display:flex;gap:8px;z-index:6}
+  /* Akciósáv + extra gombok */
+  #actions{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);display:flex;gap:8px;z-index:6;flex-wrap:wrap;justify-content:center}
   #actions .btn.main{background:#1a4;border-color:#083}
   #actions .btn.upg{background:#284;border-color:#173}
   #actions .btn.info{background:#333;border-color:#444}
+  .qty{display:flex;gap:6px}
+  .qty .btn{padding:6px 8px}
+
+  /* Toast */
   #toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:#222;color:#fff;padding:8px 12px;border-radius:8px;font-size:14px;z-index:7;opacity:0;transition:opacity .2s}
 
   /* Zóna legenda */
-  #zones-legend{position:fixed; right:12px; top:56px; z-index:6; background:var(--ui-bg); color:#fff; padding:10px 12px; border-radius:12px; display:none; min-width:240px}
+  #zones-legend{position:fixed; right:12px; top:56px; z-index:6; background:var(--ui-bg); color:#fff; padding:10px 12px; border-radius:12px; display:none; min-width:260px}
   .zl-row{display:flex; align-items:center; gap:10px; margin:6px 0}
   .zl-swatch{width:16px;height:16px;border-radius:4px;box-shadow:0 0 0 2px rgba(255,255,255,.2) inset}
 
@@ -126,17 +139,24 @@
 
   <!-- Akciók -->
   <div id="actions" hidden>
+    <div class="qty">
+      <button class="btn" id="qty-1">x1</button>
+      <button class="btn" id="qty-10">x10</button>
+      <button class="btn" id="qty-100">x100</button>
+    </div>
+    <button class="btn upg"  id="act-upg">Fejlesztés</button>
     <button class="btn main" id="act-reno">Renoválás</button>
-    <button class="btn upg"  id="act-upg">Fejlesztés (szint)</button>
     <button class="btn info" id="act-info">Infó</button>
+    <button class="btn"      id="act-tune" title="Finomhangolás – kis bónusz, idővel töltődő">Tune</button>
+    <span id="tune-info" style="align-self:center;opacity:.8"></span>
   </div>
 
   <div id="toast"></div>
 
 <script>
-/*** =============== LOGIKA (zónák + early + hotfix) =============== ***/
+/*** ==================== Hosszú távú balansz + hibajavítás ==================== ***/
 
-/* Típusok + Tech */
+/* ───────── Típusok + Tech ───────── */
 const TYPES = [
   { key:'workshop', name:'Műhely',   baseIPS:1.2,   lvMul:1.50,
     tech:[ {k:'tools',name:'Szerszámkészlet',base:1_000,scale:8,mult:2},
@@ -160,7 +180,7 @@ const TYPES = [
            {k:'meta', name:'Metagyár-protokoll',base:4e8,scale:12,mult:1500}, ]},
 ];
 
-/* Zónák */
+/* ───────── Városrészek ───────── */
 const ZONES = [
   { key:'old', name:'Belváros',          color:'#3b82f6', rect:{x:0,y:0,w:4,h:3},
     ipsMul:1.10, upgMul:1.10, renoMul:1.10, typeBoost:{} },
@@ -174,94 +194,176 @@ const ZONES = [
     ipsMul:1.10, upgMul:1.25, renoMul:1.30, typeBoost:{4:1.35} },
 ];
 
-/* Early tuning */
-const UNLOCK_GROSS = [0, 2_000, 20_000, 250_000, 3_000_000];
-const RENO_COST    = [200, 2_000, 25_000, 300_000, 4_000_000];
-const EARLY_STAGES = [
-  { gross: 5_000,  ips: 2.0, cost: 0.60 },
-  { gross: 50_000, ips: 1.5, cost: 0.80 }
+/* ───────── Hosszú távú pacing ─────────
+   - Szegmensek: korai könnyítés -> közép/late fokozódó költség
+   - Így sosem fut el, de mindig van mit fejleszteni
+*/
+const PACING = [
+  { gross:     50_000, ips: 1.60, cost: 0.70 },
+  { gross:    500_000, ips: 1.25, cost: 0.85 },
+  { gross:  5_000_000, ips: 1.00, cost: 1.00 },
+  { gross: 50_000_000, ips: 0.95, cost: 1.15 },
+  { gross:500_000_000, ips: 0.90, cost: 1.30 },
+  { gross:  5_000_000_000, ips: 0.85, cost: 1.50 },
+  { gross: 50_000_000_000, ips: 0.80, cost: 1.75 },
+  { gross:500_000_000_000, ips: 0.75, cost: 2.00 },
+  { gross:               Infinity, ips: 0.70, cost: 2.30 }
 ];
 
+/* Softcap a szorzókra (tech*mérföldkő stb.) – kontrollált görbe */
+const SOFTCAP = { cap: 1e6, power: 0.60 };
+
+/* Momentum (limitált) */
+const MOMENTUM_MAX = 0.30;   // +30%
+
+/* Offline hozam limit (órában) */
+const OFFLINE_CAP_HOURS = 8;
+
+/* Romok & feloldás – lassabb, hosszú távra */
+const UNLOCK_GROSS = [0,  200_000,   5_000_000,   150_000_000,  5_000_000_000];
+const RENO_COST    = [200, 15_000,     350_000,     9_000_000,     220_000_000];
+
 /* Pálya */
-const CITY_W=12, CITY_H=8;
-const ROAD_ROWS=new Set([1,4,7]);
-const ROAD_COLS=new Set([2,6,9]);
+const CITY_W = 12, CITY_H = 8;
+const ROAD_ROWS = new Set([1,4,7]);
+const ROAD_COLS = new Set([2,6,9]);
 
 /* Állapot */
-const state={ money:0, gross:0, prestige:0, paused:false, lastTick:Date.now(),
-  city:{ w:CITY_W, h:CITY_H, factories:[], ruins:[] }, tech:{} };
+const state = {
+  money:0, gross:0, prestige:0, paused:false, lastTick:Date.now(),
+  city:{ w:CITY_W, h:CITY_H, factories:[], ruins:[] },
+  tech:{},
+  tune:{ charges:6, maxCharges:6, regenSec:180, lastRegen:Date.now() } // 1 charge / 3 perc, max 6
+};
 
-/* Util */
-const fmt=n=>!isFinite(n)?'∞':(n<1e6?Math.floor(n).toLocaleString('hu-HU'):(()=>{const u=['','K','M','B','T','Qa','Qi','Sx','Sp','Oc','No','De'];let i=0;while(n>=1000&&i<u.length-1){n/=1000;i++;}return n.toFixed(2)+' '+u[i];})());
-const isRoad=(x,y)=>ROAD_ROWS.has(y)||ROAD_COLS.has(x);
-const zoneOf=(x,y)=>{for(const z of ZONES){const r=z.rect;if(x>=r.x&&x<r.x+r.w&&y>=r.y&&y<r.y+r.h)return z;}return null;};
+/* ───────── Util ───────── */
+const fmt = n => !isFinite(n) ? '∞' :
+  (n<1e6 ? Math.floor(n).toLocaleString('hu-HU') :
+  (()=>{const u=['','K','M','B','T','Qa','Qi','Sx','Sp','Oc','No','De'];let i=0;while(n>=1000&&i<u.length-1){n/=1000;i++;}return n.toFixed(2)+' '+u[i];})());
+const isRoad = (x,y)=> ROAD_ROWS.has(y) || ROAD_COLS.has(x);
+const zoneOf = (x,y)=>{ for(const z of ZONES){const r=z.rect; if(x>=r.x && x<r.x+r.w && y>=r.y && y<r.y+r.h) return z;} return null; };
 
-function earlyBoost(){for(const s of EARLY_STAGES) if(state.gross<s.gross) return {ipsMul:s.ips,costMul:s.cost}; return {ipsMul:1,costMul:1};}
-function momentumMult(){const n=state.city.factories.length; return 1+Math.min(0.03*Math.max(0,n-1),0.60);}
-function milestoneCount(f){return Math.floor((f.level-1)/10);}
-function milestoneMult(f){return Math.pow(3,milestoneCount(f));}
-function milestoneCostMul(f){return Math.pow(0.9,milestoneCount(f));}
-
-function techMultFor(typeKey){const tConf=TYPES.find(t=>t.key===typeKey),lvMap=state.tech[typeKey]||{};return tConf.tech.reduce((m,t)=>m*Math.pow(t.mult,lvMap[t.k]||0),1);}
-
-function ipsForFactory(f){
-  const conf=TYPES[f.type]; const z=zoneOf(f.x,f.y);
-  let mul=techMultFor(conf.key)*(1+state.prestige*0.5);
-  if(z){mul*=z.ipsMul||1; if(z.typeBoost&&z.typeBoost[f.type]!=null) mul*=z.typeBoost[f.type];}
-  const eb=earlyBoost(); mul*=eb.ipsMul*momentumMult()*milestoneMult(f);
-  return conf.baseIPS*Math.pow(conf.lvMul,f.level-1)*mul;
+function pacingNow(){
+  for (const s of PACING) if (state.gross < s.gross) return s;
+  return PACING[PACING.length-1];
 }
-function totalIPS(){return state.city.factories.reduce((s,f)=>s+ipsForFactory(f),0);}
+function momentumMult(){
+  const n = state.city.factories.length;
+  return 1 + Math.min(0.03 * Math.max(0, n - 1), MOMENTUM_MAX);
+}
+function softcap(x, cap=SOFTCAP.cap, p=SOFTCAP.power){
+  if (x <= cap) return x;
+  return cap * Math.pow(x / cap, p);
+}
+function milestoneCount(f){ return Math.floor((f.level-1)/10); }
+function milestoneMult(f){ return Math.pow(3, milestoneCount(f)); }
+function milestoneCostMul(f){ return Math.pow(0.9, milestoneCount(f)); }
 
-function levelUpCost(f){
-  const base=400*Math.pow(1.25,f.level-1), typeM=Math.pow(6,f.type);
-  const z=zoneOf(f.x,f.y), zoneM=z?.upgMul||1, eb=earlyBoost().costMul, mileM=milestoneCostMul(f);
-  return Math.floor(base*typeM*zoneM*eb*mileM);
+function techMultFor(typeKey){
+  const tConf = TYPES.find(t=>t.key===typeKey), lvMap = state.tech[typeKey]||{};
+  const raw = tConf.tech.reduce((m,t)=> m*Math.pow(t.mult, lvMap[t.k]||0), 1);
+  return raw;
+}
+
+/* IPS (zóna + pace + momentum + softcap) */
+function ipsForFactory(f){
+  const conf = TYPES[f.type];
+  const z = zoneOf(f.x, f.y);
+  let mul = (1 + state.prestige*0.5);
+
+  if (z){
+    mul *= z.ipsMul || 1;
+    if (z.typeBoost && z.typeBoost[f.type] != null) mul *= z.typeBoost[f.type];
+  }
+
+  // Tech + mérföldkő -> softcap
+  const growth = techMultFor(conf.key) * milestoneMult(f);
+  mul *= softcap(growth);
+
+  // Pacing + momentum
+  const pc = pacingNow();
+  mul *= pc.ips * momentumMult();
+
+  return conf.baseIPS * Math.pow(conf.lvMul, f.level-1) * mul;
+}
+function totalIPS(){ return state.city.factories.reduce((s,f)=> s + ipsForFactory(f), 0); }
+
+/* Ár (zóna + pace + mérföldkő kedvezmény) + enyhe progress‑infláció */
+function progressInflation(){
+  // Gördülő infláció: minél nagyobb a gross, annál erősebb költségszorzó
+  // finom (0.04‑0.12) közti kitevő, hogy hónapokra nyúljon
+  const g = Math.max(1, state.gross);
+  const era = Math.max(0, Math.log10(g / 1e6));   // 1e6 felett nő
+  return Math.pow(1.12, era);                     // 1.12^(era)
+}
+function levelUpCostSingle(f, nextLevel){
+  const base   = 500 * Math.pow(1.30, nextLevel-1);      // kicsit erősebb görbe
+  const typeM  = Math.pow(7, f.type);                    // későbbi típus drágább
+  const z      = zoneOf(f.x, f.y);
+  const zoneM  = z?.upgMul || 1;
+  const pc     = pacingNow().cost;
+  const mileM  = milestoneCostMul({level:nextLevel});    // kedvezmény az eddigi milestone-ok alapján
+  const infl   = progressInflation();
+  return Math.floor(base * typeM * zoneM * pc * (1/mileM) * infl);
+}
+/* Bulk vásárlás (x1/x10/x100) – a single árakat összegezzük */
+function levelUpCostBulk(f, qty){
+  let cost = 0;
+  for (let i=1;i<=qty;i++){
+    cost += levelUpCostSingle(f, f.level + i);
+  }
+  return cost;
 }
 
 /* Seed + őrség */
 function seedCity(){
-  state.city.factories.push({x:3,y:2,type:0,level:1});
-  const ruins=[{x:5,y:2,tier:1},{x:8,y:2,tier:2},{x:10,y:3,tier:3},{x:3,y:5,tier:1},{x:6,y:5,tier:2},{x:9,y:5,tier:3},{x:10,y:6,tier:4}]
-    .filter(p=>!isRoad(p.x,p.y));
-  state.city.ruins=ruins.map(p=>({x:p.x,y:p.y,tier:p.tier,unlocked:false}));
+  state.city.factories.push({x:3,y:2,type:0,level:1, tune:0}); // tune: finomhangolás szint
+  const ruins=[ {x:5,y:2,tier:1},{x:8,y:2,tier:2},{x:10,y:3,tier:3},
+                {x:3,y:5,tier:1},{x:6,y:5,tier:2},{x:9,y:5,tier:3},{x:10,y:6,tier:4}]
+               .filter(p=>!isRoad(p.x,p.y));
+  state.city.ruins = ruins.map(p=>({x:p.x,y:p.y,tier:p.tier,unlocked:false}));
 }
 function ensureSeed(){
-  if(!state.city.factories||state.city.factories.length===0){
-    seedCity(); state.money=Math.max(state.money||0,1500);
+  if (!state.city.factories || state.city.factories.length===0){
+    seedCity(); state.money=Math.max(state.money||0, 1500);
   }
 }
 
-/* UI refs */
-const grid=document.getElementById('city-grid');
-const wrap=document.getElementById('city-wrap');
-const svgZones=document.getElementById('zones');
-const svgDecor=document.getElementById('decor');
-const svgRoads=document.getElementById('roads');
-const elMoney=document.getElementById('hud-money');
-const elGross=document.getElementById('hud-gross');
-const elIPS=document.getElementById('hud-ips');
-const elPrest=document.getElementById('hud-prestige');
-const toastEl=document.getElementById('toast');
+/* ───────── UI hivatkozások ───────── */
+const grid      = document.getElementById('city-grid');
+const wrap      = document.getElementById('city-wrap');
+const svgZones  = document.getElementById('zones');
+const svgDecor  = document.getElementById('decor');
+const svgRoads  = document.getElementById('roads');
+const elMoney   = document.getElementById('hud-money');
+const elGross   = document.getElementById('hud-gross');
+const elIPS     = document.getElementById('hud-ips');
+const elPrest   = document.getElementById('hud-prestige');
+const toastEl   = document.getElementById('toast');
 
-const actions=document.getElementById('actions');
-const btnReno=document.getElementById('act-reno');
-const btnUpg=document.getElementById('act-upg');
-const btnInfo=document.getElementById('act-info');
+const actions   = document.getElementById('actions');
+const btnReno   = document.getElementById('act-reno');
+const btnUpg    = document.getElementById('act-upg');
+const btnInfo   = document.getElementById('act-info');
+const btnTune   = document.getElementById('act-tune');
+const tuneInfo  = document.getElementById('tune-info');
 
-const btnSave=document.getElementById('btn-save');
-const btnLoad=document.getElementById('btn-load');
-const btnExport=document.getElementById('btn-export');
-const btnImport=document.getElementById('btn-import');
-const btnReset=document.getElementById('btn-reset');
-const btnPause=document.getElementById('btn-pause');
-const btnRnd=document.getElementById('btn-rnd');
-const rndPanel=document.getElementById('rnd');
-const rndList=document.getElementById('rnd-list');
+const btnSave   = document.getElementById('btn-save');
+const btnLoad   = document.getElementById('btn-load');
+const btnExport = document.getElementById('btn-export');
+const btnImport = document.getElementById('btn-import');
+const btnReset  = document.getElementById('btn-reset');
+const btnPause  = document.getElementById('btn-pause');
+const btnRnd    = document.getElementById('btn-rnd');
+const rndPanel  = document.getElementById('rnd');
+const rndList   = document.getElementById('rnd-list');
 
-const btnZones=document.getElementById('btn-zones');
-const zlPanel=document.getElementById('zones-legend');
-const zlList=document.getElementById('zones-legend-list');
+const btnZones  = document.getElementById('btn-zones');
+const zlPanel   = document.getElementById('zones-legend');
+const zlList    = document.getElementById('zones-legend-list');
+
+const btnQ1=document.getElementById('qty-1'), btnQ10=document.getElementById('qty-10'), btnQ100=document.getElementById('qty-100');
+let upgQty = 1;
 
 let selected=null;
 
@@ -269,10 +371,10 @@ let selected=null;
 function updateHUD(){ elMoney.textContent=fmt(state.money); elGross.textContent=fmt(state.gross); elIPS.textContent=fmt(totalIPS())+' /s'; elPrest.textContent=state.prestige; }
 function toast(msg){ toastEl.textContent=msg; toastEl.style.opacity='1'; clearTimeout(toast._t); toast._t=setTimeout(()=>toastEl.style.opacity='0',1200); }
 
-/* Grid */
+/* ───────── Grid + Rétegek ───────── */
 function buildGrid(){
-  grid.style.setProperty('--city-w',CITY_W);
-  grid.style.setProperty('--city-h',CITY_H);
+  grid.style.setProperty('--city-w', CITY_W);
+  grid.style.setProperty('--city-h', CITY_H);
   grid.innerHTML='';
   for(let y=0;y<CITY_H;y++){
     for(let x=0;x<CITY_W;x++){
@@ -282,15 +384,14 @@ function buildGrid(){
       grid.appendChild(t);
     }
   }
-  layoutLayers(); renderAll();
+  layoutLayers();
+  renderAll();
 }
-
-/* Layout + rajz */
 function layoutLayers(){
-  const tile=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--tile'))||76;
-  const w=CITY_W*tile, h=CITY_H*tile;
-  wrap.style.width=w+'px'; wrap.style.height=h+'px';
-  [svgZones,svgDecor,svgRoads].forEach(s=>{ s.setAttribute('viewBox',`0 0 ${w} ${h}`); s.setAttribute('width',w); s.setAttribute('height',h); });
+  const tile = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--tile')) || 76;
+  const w = CITY_W*tile, h = CITY_H*tile;
+  wrap.style.width = w+'px'; wrap.style.height = h+'px';
+  [svgZones, svgDecor, svgRoads].forEach(s=>{ s.setAttribute('viewBox', `0 0 ${w} ${h}`); s.setAttribute('width', w); s.setAttribute('height', h); });
   drawZones(w,h,tile); drawDecor(w,h,tile); drawRoads(w,h,tile);
 }
 function drawZones(w,h,t){
@@ -298,59 +399,103 @@ function drawZones(w,h,t){
   const ns='http://www.w3.org/2000/svg';
   const group=document.createElementNS(ns,'g'); group.setAttribute('opacity','0.22'); svgZones.appendChild(group);
   ZONES.forEach(z=>{
-    const rx=z.rect.x*t, ry=z.rect.y*t, rw=z.rect.w*t, rh=z.rect.h*t;
-    const r=document.createElementNS(ns,'rect'); r.setAttribute('x',rx); r.setAttribute('y',ry);
+    const rx = z.rect.x*t, ry = z.rect.y*t, rw = z.rect.w*t, rh = z.rect.h*t;
+    const r=document.createElementNS(ns,'rect');
+    r.setAttribute('x',rx); r.setAttribute('y',ry);
     r.setAttribute('width',rw); r.setAttribute('height',rh);
     r.setAttribute('fill',z.color); r.setAttribute('rx',12); r.setAttribute('ry',12);
-    r.setAttribute('stroke',z.color); r.setAttribute('stroke-opacity','0.55'); r.setAttribute('stroke-width','2'); r.setAttribute('fill-opacity','0.32');
+    r.setAttribute('stroke',z.color); r.setAttribute('stroke-opacity','0.55'); r.setAttribute('stroke-width','2');
+    r.setAttribute('fill-opacity','0.32');
     group.appendChild(r);
-    const label=document.createElementNS(ns,'text'); label.textContent=z.name;
-    label.setAttribute('x',rx+rw/2); label.setAttribute('y',ry+18);
+
+    const label=document.createElementNS(ns,'text');
+    label.textContent=z.name;
+    label.setAttribute('x', rx + rw/2); label.setAttribute('y', ry + 18);
     label.setAttribute('text-anchor','middle'); label.setAttribute('font-size','14'); label.setAttribute('fill','#fff'); label.setAttribute('opacity','0.9');
     svgZones.appendChild(label);
   });
+  // legenda
   zlList.innerHTML='';
   ZONES.forEach(z=>{
     const row=document.createElement('div'); row.className='zl-row';
     const sw=document.createElement('div'); sw.className='zl-swatch'; sw.style.background=z.color; row.appendChild(sw);
-    const txt=document.createElement('div'); txt.innerHTML=`<b>${z.name}</b><br/><small>IPS ×${(z.ipsMul||1).toFixed(2)} • Szint ár ×${(z.upgMul||1).toFixed(2)} • Renov ár ×${(z.renoMul||1).toFixed(2)}</small>`;
+    const txt=document.createElement('div'); txt.innerHTML = `<b>${z.name}</b><br/><small>IPS ×${(z.ipsMul||1).toFixed(2)} • Szint ár ×${(z.upgMul||1).toFixed(2)} • Renov ár ×${(z.renoMul||1).toFixed(2)}</small>`;
     row.appendChild(txt); zlList.appendChild(row);
   });
 }
 function drawDecor(w,h,t){
-  svgDecor.innerHTML=''; const ns='http://www.w3.org/2000/svg';
+  svgDecor.innerHTML='';
+  const ns='http://www.w3.org/2000/svg';
+
   const river=document.createElementNS(ns,'path');
-  river.setAttribute('d',`M ${-0.1*w} ${0.15*h} C ${0.2*w} ${0.05*h}, ${0.45*w} ${0.25*h}, ${0.7*w} ${0.18*h} S ${1.05*w} ${0.15*h}, ${1.1*w} ${0.3*h}`);
-  river.setAttribute('fill','none'); river.setAttribute('stroke','#5fb6ff'); river.setAttribute('stroke-width',t*0.6);
+  river.setAttribute('d', `M ${-0.1*w} ${0.15*h} C ${0.2*w} ${0.05*h}, ${0.45*w} ${0.25*h}, ${0.7*w} ${0.18*h} S ${1.05*w} ${0.15*h}, ${1.1*w} ${0.3*h}`);
+  river.setAttribute('fill','none'); river.setAttribute('stroke','#5fb6ff'); river.setAttribute('stroke-width', t*0.6);
   river.setAttribute('stroke-linecap','round'); river.setAttribute('stroke-opacity','0.35'); svgDecor.appendChild(river);
-  const parks=[{x:0.12*w,y:0.72*h,rx:0.18*w,ry:0.10*h},{x:0.78*w,y:0.68*h,rx:0.14*w,ry:0.09*h},{x:0.65*w,y:0.35*h,rx:0.10*w,ry:0.06*h}];
-  const defs=document.createElementNS(ns,'defs'); const grad=document.createElementNS(ns,'radialGradient'); grad.id='parkGrad';
+
+  const parks = [ {x:0.12*w,y:0.72*h, rx:0.18*w, ry:0.10*h}, {x:0.78*w,y:0.68*h, rx:0.14*w, ry:0.09*h}, {x:0.65*w,y:0.35*h, rx:0.10*w, ry:0.06*h} ];
+  const defs=document.createElementNS(ns,'defs');
+  const grad=document.createElementNS(ns,'radialGradient'); grad.id='parkGrad';
   const s1=document.createElementNS(ns,'stop'); s1.setAttribute('offset','0%'); s1.setAttribute('stop-color','#7ecb7e');
   const s2=document.createElementNS(ns,'stop'); s2.setAttribute('offset','100%'); s2.setAttribute('stop-color','#5daa5d');
   grad.appendChild(s1); grad.appendChild(s2); defs.appendChild(grad); svgDecor.appendChild(defs);
-  parks.forEach(p=>{const e=document.createElementNS(ns,'ellipse'); e.setAttribute('cx',p.x); e.setAttribute('cy',p.y); e.setAttribute('rx',p.rx); e.setAttribute('ry',p.ry); e.setAttribute('fill','url(#parkGrad)'); e.setAttribute('opacity','0.65'); svgDecor.appendChild(e);});
-  for(let i=0;i<60;i++){const c=document.createElementNS(ns,'circle'); const px=Math.random()*w, py=(0.55+Math.random()*0.4)*h;
-    c.setAttribute('cx',px); c.setAttribute('cy',py); c.setAttribute('r',Math.random()*4+2); c.setAttribute('fill','#2f7d2f'); c.setAttribute('opacity','0.5'); svgDecor.appendChild(c);}
+  parks.forEach(p=>{ const e=document.createElementNS(ns,'ellipse'); e.setAttribute('cx',p.x); e.setAttribute('cy',p.y); e.setAttribute('rx',p.rx); e.setAttribute('ry',p.ry); e.setAttribute('fill','url(#parkGrad)'); e.setAttribute('opacity','0.65'); svgDecor.appendChild(e); });
+
+  for(let i=0;i<60;i++){
+    const c=document.createElementNS(ns,'circle');
+    const px=Math.random()*w, py=(0.55+Math.random()*0.4)*h;
+    c.setAttribute('cx',px); c.setAttribute('cy',py);
+    c.setAttribute('r',Math.random()*4+2);
+    c.setAttribute('fill','#2f7d2f'); c.setAttribute('opacity','0.5');
+    svgDecor.appendChild(c);
+  }
 }
 function drawRoads(w,h,t){
-  svgRoads.innerHTML=''; const ns='http://www.w3.org/2000/svg'; const thickness=t*0.62, lineW=Math.max(2,t*0.06);
-  ROAD_ROWS.forEach(y=>{const yc=y*t+t*0.5;
-    const r=document.createElementNS(ns,'rect'); r.setAttribute('x',0); r.setAttribute('y',yc-thickness/2); r.setAttribute('width',w); r.setAttribute('height',thickness); r.setAttribute('fill','var(--road)'); svgRoads.appendChild(r);
-    const mid=document.createElementNS(ns,'line'); mid.setAttribute('x1',0); mid.setAttribute('y1',yc); mid.setAttribute('x2',w); mid.setAttribute('y2',yc);
-    mid.setAttribute('stroke','var(--line)'); mid.setAttribute('stroke-width',lineW); mid.setAttribute('stroke-dasharray',`${t*0.35} ${t*0.25}`); mid.setAttribute('stroke-opacity','0.65'); svgRoads.appendChild(mid);});
-  ROAD_COLS.forEach(x=>{const xc=x*t+t*0.5;
-    const r=document.createElementNS(ns,'rect'); r.setAttribute('x',xc-thickness/2); r.setAttribute('y',0); r.setAttribute('width',thickness); r.setAttribute('height',h); r.setAttribute('fill','var(--road)'); svgRoads.appendChild(r);
-    const mid=document.createElementNS(ns,'line'); mid.setAttribute('x1',xc); mid.setAttribute('y1',0); mid.setAttribute('x2',xc); mid.setAttribute('y2',h);
-    mid.setAttribute('stroke','var(--line)'); mid.setAttribute('stroke-width',lineW); mid.setAttribute('stroke-dasharray',`${t*0.35} ${t*0.25}`); mid.setAttribute('stroke-opacity','0.65'); svgRoads.appendChild(mid);});
+  svgRoads.innerHTML='';
+  const ns='http://www.w3.org/2000/svg';
+  const thickness = t*0.62, lineW = Math.max(2, t*0.06);
+
+  ROAD_ROWS.forEach(y=>{
+    const yCenter = y*t + t*0.5;
+    const r=document.createElementNS(ns,'rect');
+    r.setAttribute('x',0); r.setAttribute('y',yCenter-thickness/2);
+    r.setAttribute('width',w); r.setAttribute('height',thickness);
+    r.setAttribute('fill','var(--road)'); svgRoads.appendChild(r);
+
+    const mid=document.createElementNS(ns,'line');
+    mid.setAttribute('x1',0); mid.setAttribute('y1',yCenter);
+    mid.setAttribute('x2',w); mid.setAttribute('y2',yCenter);
+    mid.setAttribute('stroke','var(--line)'); mid.setAttribute('stroke-width',lineW);
+    mid.setAttribute('stroke-dasharray', `${t*0.35} ${t*0.25}`);
+    mid.setAttribute('stroke-opacity','0.65');
+    svgRoads.appendChild(mid);
+  });
+  ROAD_COLS.forEach(x=>{
+    const xCenter = x*t + t*0.5;
+    const r=document.createElementNS(ns,'rect');
+    r.setAttribute('x',xCenter-thickness/2); r.setAttribute('y',0);
+    r.setAttribute('width',thickness); r.setAttribute('height',h);
+    r.setAttribute('fill','var(--road)'); svgRoads.appendChild(r);
+
+    const mid=document.createElementNS(ns,'line');
+    mid.setAttribute('x1',xCenter); mid.setAttribute('y1',0);
+    mid.setAttribute('x2',xCenter); mid.setAttribute('y2',h);
+    mid.setAttribute('stroke','var(--line)'); mid.setAttribute('stroke-width',lineW);
+    mid.setAttribute('stroke-dasharray', `${t*0.35} ${t*0.25}`);
+    mid.setAttribute('stroke-opacity','0.65');
+    svgRoads.appendChild(mid);
+  });
 }
 
-/* Render */
-function clearTiles(){for(const t of grid.children){t.querySelectorAll('.factory,.ruin').forEach(e=>e.remove()); t.classList.remove('sel');}}
+/* ───────── Render + Akciósáv ───────── */
+function clearTiles(){ for(const t of grid.children){ t.querySelectorAll('.factory,.ruin').forEach(e=>e.remove()); t.classList.remove('sel'); } }
 function factoryHTML(f){
-  const conf=TYPES[f.type]; const chimneys=Math.min(1+Math.floor((f.level-1)/2),4);
-  const colorShift=Math.min(f.level-1,6); const roofGrad=`linear-gradient(#${['b33','b53','b73','b93','bb3','bd3','bf3'][colorShift]},#822)`;
+  const conf = TYPES[f.type];
+  const chimneys=Math.min(1+Math.floor((f.level-1)/2),4);
+  const colorShift=Math.min(f.level-1,6);
+  const roofGrad=`linear-gradient(#${['b33','b53','b73','b93','bb3','bd3','bf3'][colorShift]},#822)`;
   const bodyShade=Math.min(40+f.level*4,80);
-  return `<div class="factory">
+  return `
+    <div class="factory">
       <div class="badge type">${conf.name}</div>
       <div class="roof" style="background:${roofGrad}"></div>
       <div class="body" style="background:
@@ -361,70 +506,152 @@ function factoryHTML(f){
       <div class="badge">Lv ${f.level}</div>
     </div>`;
 }
-function ruinHTML(r){return `<div class="ruin${r.unlocked?'':' locked'}"></div>`;}
+function ruinHTML(r){ return `<div class="ruin${r.unlocked?'':' locked'}"></div>`; }
+
 function renderAll(){
   clearTiles();
-  for(const r of state.city.ruins){const idx=r.y*CITY_W+r.x, tile=grid.children[idx]; if(tile) tile.insertAdjacentHTML('beforeend',ruinHTML(r));}
-  for(const f of state.city.factories){const idx=f.y*CITY_W+f.x, tile=grid.children[idx]; if(tile) tile.insertAdjacentHTML('beforeend',factoryHTML(f));}
-  updateHUD(); renderRND();
+  for(const r of state.city.ruins){
+    const idx=r.y*CITY_W + r.x; const tile=grid.children[idx];
+    if (tile) tile.insertAdjacentHTML('beforeend', ruinHTML(r));
+  }
+  for(const f of state.city.factories){
+    const idx=f.y*CITY_W + f.x; const tile=grid.children[idx];
+    if (tile) tile.insertAdjacentHTML('beforeend', factoryHTML(f));
+  }
+  if (selected){ const i=selected.y*CITY_W+selected.x; const t=grid.children[i]; if(t) t.classList.add('sel'); }
+  updateHUD(); renderRND(); refreshActions();
 }
 
-/* Katt + akciók */
-function findFactoryAt(x,y){return state.city.factories.find(f=>f.x===x&&f.y===y);}
-function findRuinAt(x,y){return state.city.ruins.find(r=>r.x===x&&r.y===y);}
-function onTileClick(e){
-  for(const t of grid.children) t.classList.remove('sel');
-  const t=e.currentTarget; t.classList.add('sel');
-  selected={x:+t.dataset.x,y:+t.dataset.y};
+/* Akciósáv frissítés (minden frame-ben is hívjuk) */
+function refreshActions(){
+  if(!selected){ actions.hidden=true; return; }
   const f=findFactoryAt(selected.x,selected.y);
   const r=findRuinAt(selected.x,selected.y);
   const z=zoneOf(selected.x,selected.y);
 
-  actions.hidden=false;
+  actions.hidden = !(f||r);
   btnUpg.hidden=!f; btnReno.hidden=!r; btnInfo.hidden=!(f||r);
+  btnTune.hidden=!f; tuneInfo.textContent='';
 
-  if(f){const cost=levelUpCost(f); btnUpg.disabled=state.money<cost;
-    btnUpg.textContent=`Fejlesztés → Lv ${f.level+1} (${fmt(cost)})${z?` • ${z.name}`:''}`;}
-  if(r){const need=UNLOCK_GROSS[r.tier], base=RENO_COST[r.tier], zm=(z?.renoMul||1), cost=Math.floor(base*zm);
-    btnReno.disabled=!(r.unlocked&&state.money>=cost);
-    btnReno.textContent=r.unlocked?`Renoválás (${fmt(cost)})${z?` • ${z.name}`:''}`:`Zárolt – cél: ${fmt(need)} össz.`;}
+  if (f){
+    // Bulk költség
+    const cost = levelUpCostBulk(f, upgQty);
+    btnUpg.disabled = state.money < cost;
+    btnUpg.textContent = `Fejlesztés +${upgQty} (${fmt(cost)})${z?` • ${z.name}`:''}`;
+
+    // Tune státusz
+    tuneInfo.textContent = `Tune: ${state.tune.charges}/${state.tune.maxCharges}`;
+    btnTune.disabled = state.tune.charges<=0;
+  }
+  if (r){
+    const need=UNLOCK_GROSS[r.tier], base=RENO_COST[r.tier], zm=(z?.renoMul||1);
+    const cost=Math.floor(base*zm*progressInflation());
+    btnReno.disabled = !(r.unlocked && state.money >= cost);
+    btnReno.textContent = r.unlocked ? `Renoválás (${fmt(cost)})${z?` • ${z.name}`:''}` : `Zárolt – cél: ${fmt(need)} össz.`;
+  }
 }
+
+/* Kijelölés + akciók */
+function findFactoryAt(x,y){ return state.city.factories.find(f=>f.x===x && f.y===y); }
+function findRuinAt(x,y){ return state.city.ruins.find(r=>r.x===x && r.y===y); }
+function onTileClick(e){
+  for(const t of grid.children) t.classList.remove('sel');
+  const t=e.currentTarget; t.classList.add('sel');
+  selected={x:+t.dataset.x,y:+t.dataset.y};
+  refreshActions();
+}
+
+/* Bulk qty gombok */
+btnQ1.onclick = ()=>{upgQty=1; toast('x1'); refreshActions();};
+btnQ10.onclick= ()=>{upgQty=10;toast('x10');refreshActions();};
+btnQ100.onclick=()=>{upgQty=100;toast('x100');refreshActions();};
+
+/* Fejlesztés (bulk) */
 btnUpg.onclick=()=>{
   if(!selected) return; const f=findFactoryAt(selected.x,selected.y); if(!f) return;
-  const cost=levelUpCost(f); if(state.money<cost) return;
-  state.money-=cost; f.level++; if(f.level%10===0) toast(`Mérföldkő! ×3 termelés és −10% jövőbeli szintár (stackel).`);
-  renderAll(); saveNow(false); toast('Fejlesztve');
+  const cost=levelUpCostBulk(f, upgQty); if(state.money<cost) return;
+  state.money-=cost; f.level+=upgQty;
+  if (f.level % 10 === 0) toast(`Mérföldkő! ×3 termelés és −10% jövőbeli szintár (stackel).`);
+  renderAll(); saveNow(false);
 };
+/* Renoválás */
 btnReno.onclick=()=>{
   if(!selected) return; const r=findRuinAt(selected.x,selected.y); if(!r||!r.unlocked) return;
-  const z=zoneOf(r.x,r.y); const cost=Math.floor(RENO_COST[r.tier]*(z?.renoMul||1)); if(state.money<cost) return;
-  state.money-=cost; state.city.ruins=state.city.ruins.filter(x=>!(x.x===r.x&&x.y===r.y));
-  state.city.factories.push({x:r.x,y:r.y,type:r.tier,level:1});
+  const z=zoneOf(r.x,r.y);
+  const cost=Math.floor(RENO_COST[r.tier]*(z?.renoMul||1)*progressInflation());
+  if(state.money<cost) return;
+  state.money-=cost;
+  state.city.ruins=state.city.ruins.filter(x=>!(x.x===r.x&&x.y===r.y));
+  state.city.factories.push({x:r.x,y:r.y,type:r.tier,level:1,tune:0});
   renderAll(); saveNow(false); toast('Renoválva');
 };
+/* Infó */
 btnInfo.onclick=()=>{
-  if(!selected) return; const f=findFactoryAt(selected.x,selected.y), r=findRuinAt(selected.x,selected.y); const z=zoneOf(selected.x,selected.y);
-  if(f){const conf=TYPES[f.type]; alert(`${conf.name}\nZóna: ${z?z.name:'N/A'}\nSzint: ${f.level}\nMérföldkövek: ${milestoneCount(f)} (×${milestoneMult(f).toFixed(0)} saját IPS)\nTermelés: ${ipsForFactory(f).toFixed(2)} /s\nKövetkező ár: ${fmt(levelUpCost(f))}`);}
-  else if(r){const name=TYPES[r.tier].name; const base=RENO_COST[r.tier], zm=(z?.renoMul||1); alert(`Rom (${name})\nZóna: ${z?z.name:'N/A'}\nFeloldás: össz‑bevétel ≥ ${fmt(UNLOCK_GROSS[r.tier])}\nRenoválás ára: ${fmt(base*zm)}`);}
+  if(!selected) return; const f=findFactoryAt(selected.x,selected.y), r=findRuinAt(selected.x,selected.y); const z=zoneOf(selected.x, selected.y);
+  if(f){ const conf=TYPES[f.type];
+    alert(`${conf.name}\nZóna: ${z?z.name:'N/A'}\nSzint: ${f.level}\nTune: ${f.tune||0} (×${(1+0.01*(f.tune||0)).toFixed(2)})\nMérföldkövek: ${milestoneCount(f)} (×${milestoneMult(f).toFixed(0)} saját IPS)\nTermelés: ${ipsForFactory(f).toFixed(2)} /s\nKövetkező(ek) ára: ${fmt(levelUpCostBulk(f, upgQty))}`);
+  } else if(r){ const name=TYPES[r.tier].name; const base=RENO_COST[r.tier], zm=(z?.renoMul||1);
+    alert(`Rom (${name})\nZóna: ${z?z.name:'N/A'}\nFeloldás: össz‑bevétel ≥ ${fmt(UNLOCK_GROSS[r.tier])}\nRenoválás ára: ${fmt(base*zm*progressInflation())}`);
+  }
 };
 
-/* Feloldás */
+/* Finomhangolás (Tune): kis bónusz ×1%/charge gyáronként, max 100 stack/gyár
+   - charge visszatölt 1/3 perc; globális készletből költ
+*/
+btnTune.onclick=()=>{
+  if(!selected) return; const f=findFactoryAt(selected.x,selected.y); if(!f) return;
+  if (state.tune.charges<=0) return;
+  f.tune = Math.min(100, (f.tune||0) + 1);
+  state.tune.charges -= 1;
+  toast(`Tune +1% → ${f.tune}%`);
+  renderAll(); saveNow(false);
+};
+/* Tune hatás hozzáadása az IPS-hez (szorzó) */
+const _ipsRaw = ipsForFactory;
+ipsForFactory = function(f){
+  const base = _ipsRaw(f);
+  const tuneMul = 1 + 0.01 * (f.tune||0);
+  return base * tuneMul;
+}
+
+/* Charge regen */
+function regenTune(){
+  const now = Date.now();
+  const dt = Math.floor((now - state.tune.lastRegen)/1000);
+  if (dt >= state.tune.regenSec){
+    const add = Math.floor(dt / state.tune.regenSec);
+    state.tune.charges = Math.min(state.tune.maxCharges, state.tune.charges + add);
+    state.tune.lastRegen = now - (dt % state.tune.regenSec)*1000;
+  }
+}
+
+/* Feloldás gross alapján */
 function checkUnlocks(){
   for(const r of state.city.ruins){
     if(!r.unlocked && state.gross>=UNLOCK_GROSS[r.tier]){
       r.unlocked=true;
       const idx=r.y*CITY_W+r.x, tile=grid.children[idx];
-      if(tile){const el=tile.querySelector('.ruin'); if(el) el.classList.remove('locked');}
+      if(tile){ const el=tile.querySelector('.ruin'); if(el) el.classList.remove('locked'); }
       toast(`${TYPES[r.tier].name} feloldva — renoválható!`);
     }
   }
 }
 
 /* R&D */
-function techLevel(typeKey,k){return (state.tech[typeKey]?.[k]||0);}
-function techCost(typeKey,k){const conf=TYPES.find(t=>t.key===typeKey), t=conf.tech.find(x=>x.k===k), lv=techLevel(typeKey,k); return Math.floor(t.base*Math.pow(t.scale,lv));}
-function buyTech(typeKey,k){const cost=techCost(typeKey,k); if(state.money<cost) return; state.money-=cost; state.tech[typeKey]=state.tech[typeKey]||{}; state.tech[typeKey][k]=techLevel(typeKey,k)+1; renderAll(); saveNow(false); toast('Tech megvéve');}
-function hasAnyFactoryOfType(idx){return state.city.factories.some(f=>f.type===idx);}
+function techLevel(typeKey,k){ return (state.tech[typeKey]?.[k]||0); }
+function techCost(typeKey,k){
+  const conf=TYPES.find(t=>t.key===typeKey), t=conf.tech.find(x=>x.k===k), lv=techLevel(typeKey,k);
+  // R&D költségek is kapnak progress inflációt
+  return Math.floor(t.base*Math.pow(t.scale,lv)*progressInflation());
+}
+function buyTech(typeKey,k){
+  const cost=techCost(typeKey,k);
+  if(state.money<cost) return;
+  state.money-=cost; state.tech[typeKey]=state.tech[typeKey]||{};
+  state.tech[typeKey][k]=techLevel(typeKey,k)+1;
+  renderAll(); saveNow(false); toast('Tech megvéve');
+}
+function hasAnyFactoryOfType(idx){ return state.city.factories.some(f=>f.type===idx); }
 function renderRND(){
   const open=rndPanel.style.display!=='none'; if(!open) return;
   rndList.innerHTML='';
@@ -435,8 +662,9 @@ function renderRND(){
     t.tech.forEach(tech=>{
       const row=document.createElement('div'); row.className='upg-row';
       const lv=techLevel(t.key,tech.k), cost=techCost(t.key,tech.k);
-      row.innerHTML=`<div><b>${tech.name}</b><br/><small>Szint: ${lv} • Szorzó: ×${tech.mult}<span style="opacity:.7">/szint</span></small></div>
-                     <button class="btn" ${state.money<cost?'disabled':''}>Vétel (${fmt(cost)})</button>`;
+      row.innerHTML=`
+        <div><b>${tech.name}</b><br/><small>Szint: ${lv} • Szorzó: ×${tech.mult}/szint</small></div>
+        <button class="btn" ${state.money<cost?'disabled':''}>Vétel (${fmt(cost)})</button>`;
       row.querySelector('button').onclick=()=>buyTech(t.key,tech.k);
       rndList.appendChild(row);
     });
@@ -444,57 +672,71 @@ function renderRND(){
 }
 
 /* Zónák ki/be + legenda */
-btnZones.onclick=()=>{const show=svgZones.style.display==='none'; svgZones.style.display=show?'block':'none'; zlPanel.style.display=show?'block':'none';};
+document.getElementById('btn-zones').onclick=()=>{
+  const show=svgZones.style.display==='none';
+  svgZones.style.display=show?'block':'none';
+  zlPanel.style.display=show?'block':'none';
+};
 (function initLegend(){ svgZones.style.display='block'; zlPanel.style.display='block'; })();
 
 /* Mentés/Betöltés/Offline */
-const SAVE_KEY='infty-city-zones-v3';  /* HOTFIX: új kulcs */
-function gameGetState(){return {v:6,money:state.money,gross:state.gross,prestige:state.prestige,paused:state.paused,city:state.city,tech:state.tech,lastTick:Date.now()};}
+const SAVE_KEY='infty-city-zones-v5';
+function gameGetState(){ return {v:8, money:state.money, gross:state.gross, prestige:state.prestige, paused:state.paused, city:state.city, tech:state.tech, tune:state.tune, lastTick:Date.now()}; }
 function gameSetState(s){
   if(!s) return;
   state.money=+s.money||0; state.gross=+s.gross||0; state.prestige=+s.prestige||0; state.paused=!!s.paused;
-  if(s.city){ state.city.factories=(s.city.factories||[]).map(f=>({x:f.x,y:f.y,type:f.type,level:f.level}));
-              state.city.ruins=(s.city.ruins||[]).map(r=>({x:r.x,y:r.y,tier:r.tier,unlocked:!!r.unlocked})); }
+  if(s.city){
+    state.city.factories=(s.city.factories||[]).map(f=>({x:f.x,y:f.y,type:f.type,level:f.level,tune:f.tune||0}));
+    state.city.ruins=(s.city.ruins||[]).map(r=>({x:r.x,y:r.y,tier:r.tier,unlocked:!!r.unlocked}));
+  }
   state.tech=s.tech||{};
+  state.tune = Object.assign({charges:6,maxCharges:6,regenSec:180,lastRegen:Date.now()}, s.tune||{});
 }
-function gameApplyOffline(ms){const gain=totalIPS()*(ms/1000); state.money+=gain; state.gross+=gain;}
+function gameApplyOffline(ms){
+  const capMs = Math.min(ms, OFFLINE_CAP_HOURS*3600*1000);
+  const gain = totalIPS() * (capMs/1000);
+  state.money += gain; state.gross += gain;
+}
 
-/* Loop */
+/* Loop – minden frame: pénz, unlock, action refresh, tune regen */
 let _last=performance.now();
 function loop(){
   const now=performance.now(), dt=(now-_last)/1000; _last=now;
-  if(!state.paused){const inc=totalIPS()*dt; state.money+=inc; state.gross+=inc; checkUnlocks();}
-  updateHUD(); requestAnimationFrame(loop);
+  if(!state.paused){
+    regenTune();
+    const inc=totalIPS()*dt;
+    state.money+=inc; state.gross+=inc;
+    checkUnlocks();
+  }
+  updateHUD(); refreshActions();
+  requestAnimationFrame(loop);
 }
 
-/* Init (őrséggel) */
+/* Init */
 function init(){
   const raw=localStorage.getItem(SAVE_KEY);
   if(raw){
     try{
       const s=JSON.parse(raw); gameSetState(s);
       const dt=Date.now()-(s.lastTick||Date.now()); if(dt>5000) gameApplyOffline(dt);
-      ensureSeed();  /* HOTFIX */
-    }catch{
-      seedCity(); state.money=1500;
-    }
+      ensureSeed();
+    }catch{ seedCity(); state.money=1500; }
   }else{
     seedCity(); state.money=1500;
   }
-  buildGrid();
-  updateHUD();
+  buildGrid(); updateHUD();
   setInterval(()=>{ localStorage.setItem(SAVE_KEY, JSON.stringify(gameGetState())); }, 10_000);
   requestAnimationFrame(loop);
 }
 
-/* Menü gombok */
-document.getElementById('btn-save').onclick  = ()=>{ localStorage.setItem(SAVE_KEY, JSON.stringify(gameGetState())); toast('Mentve'); };
-document.getElementById('btn-load').onclick  = ()=>{ const raw=localStorage.getItem(SAVE_KEY); if(!raw) return toast('Nincs mentés'); const s=JSON.parse(raw); gameSetState(s); ensureSeed(); renderAll(); toast('Betöltve'); };
-document.getElementById('btn-export').onclick= ()=>{ try{ const b64=btoa(localStorage.getItem(SAVE_KEY)||''); navigator.clipboard?.writeText(b64); prompt('Másold ki a mentést:', b64);}catch{toast('Export hiba');}};
-document.getElementById('btn-import').onclick= ()=>{ const b64=prompt('Illeszd be az exportált mentést:'); if(!b64) return; try{ const raw=atob(b64); localStorage.setItem(SAVE_KEY, raw); const s=JSON.parse(raw); gameSetState(s); ensureSeed(); renderAll(); toast('Import OK'); }catch{ toast('Import hiba'); } };
-document.getElementById('btn-reset').onclick = ()=>{ if(!confirm('Biztos?')) return; localStorage.removeItem(SAVE_KEY); location.reload(); };
-document.getElementById('btn-pause').onclick = ()=>{ state.paused=!state.paused; toast(state.paused?'Szünet':'Folytatás'); };
-document.getElementById('btn-rnd').onclick   = ()=>{ const show=rndPanel.style.display!=='block'; rndPanel.style.display=show?'block':'none'; renderRND(); };
+/* Menü */
+btnSave.onclick  = ()=>{ localStorage.setItem(SAVE_KEY, JSON.stringify(gameGetState())); toast('Mentve'); };
+btnLoad.onclick  = ()=>{ const raw=localStorage.getItem(SAVE_KEY); if(!raw) return toast('Nincs mentés'); const s=JSON.parse(raw); gameSetState(s); ensureSeed(); renderAll(); toast('Betöltve'); };
+btnExport.onclick= ()=>{ try{ const b64=btoa(localStorage.getItem(SAVE_KEY)||''); navigator.clipboard?.writeText(b64); prompt('Másold ki a mentést:', b64);}catch{toast('Export hiba');}};
+btnImport.onclick= ()=>{ const b64=prompt('Illeszd be az exportált mentést:'); if(!b64) return; try{ const raw=atob(b64); localStorage.setItem(SAVE_KEY, raw); const s=JSON.parse(raw); gameSetState(s); ensureSeed(); renderAll(); toast('Import OK'); }catch{ toast('Import hiba'); } };
+btnReset.onclick = ()=>{ if(!confirm('Biztos?')) return; localStorage.removeItem(SAVE_KEY); location.reload(); };
+btnPause.onclick = ()=>{ state.paused=!state.paused; toast(state.paused?'Szünet':'Folytatás'); };
+btnRnd.onclick   = ()=>{ const show=rndPanel.style.display!=='block'; rndPanel.style.display=show?'block':'none'; renderRND(); };
 
 init();
 </script>
