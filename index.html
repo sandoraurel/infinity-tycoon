@@ -2,84 +2,62 @@
 <!doctype html>
 <html lang="hu">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Era 0 – Map Overview (Zoom + Pan)</title>
-<style>
-  :root{
-    --ui-bg: rgba(22,22,28,.92);
-    --ui-fg: #fff;
-  }
-  html,body{height:100%;margin:0;background:#0f1420;color:#fff;font:14px/1.4 system-ui;}
-  #hud{
-    position:fixed;left:12px;top:12px;z-index:10;
-    background:var(--ui-bg);color:var(--ui-fg);
-    padding:10px 12px;border-radius:12px;max-width:min(520px, 92vw);
-  }
-  #hud b{font-weight:700}
-  #hud .hint{opacity:.75;margin-top:6px;font-size:12px;line-height:1.35}
-  #cam-ui{
-    position:fixed;left:12px;bottom:12px;z-index:10;
-    display:flex;gap:8px;
-  }
-  .btn{
-    padding:8px 10px;border:1px solid #454950;border-radius:10px;
-    background:#0f1117;color:#fff;cursor:pointer;
-  }
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Era 0 Map – Smooth Cartoon (Zoom + Pan)</title>
+  <style>
+    :root{
+      --ui-bg: rgba(22,22,28,.92);
+      --ui-fg: #fff;
+      --btn-bg: #0f1117;
+      --btn-br: #454950;
+    }
+    html,body{height:100%;margin:0;background:#0f1420;color:#fff;font:14px/1.4 system-ui;}
+    #hud{
+      position:fixed;left:12px;top:12px;z-index:20;
+      background:var(--ui-bg);color:var(--ui-fg);
+      padding:10px 12px;border-radius:12px;max-width:min(560px, 92vw);
+    }
+    #hud b{font-weight:800}
+    #hud .hint{opacity:.75;margin-top:6px;font-size:12px;line-height:1.35}
 
-  /* Viewport: itt mozog és zoomol a map */
-  #viewport{
-    position:fixed; inset:0; display:grid; place-items:center;
-  }
-  #frame{
-    width:min(94vw, 1200px);
-    height:min(82vh, 860px);
-    border-radius:22px;
-    overflow:hidden;
-    box-shadow:0 20px 60px rgba(0,0,0,.35);
-    background:linear-gradient(180deg,#6fb1ff 0%, #d8f0ff 40%, #cfe6ff 70%);
-    position:relative;
-  }
-  #wrap{
-    position:absolute; left:0; top:0;
-    transform-origin:0 0;
-    will-change:transform;
-  }
+    #cam-ui{
+      position:fixed;left:12px;bottom:12px;z-index:20;
+      display:flex;gap:8px;align-items:center;
+      background:var(--ui-bg);
+      padding:8px;border-radius:12px;
+    }
+    .btn{
+      padding:8px 10px;border:1px solid var(--btn-br);border-radius:10px;
+      background:var(--btn-bg);color:#fff;cursor:pointer;
+      user-select:none;
+    }
+    .btn:active{transform:translateY(1px)}
+    .pill{opacity:.85;font-size:12px;padding:0 8px}
 
-  /* Mini-map */
-  #minimap{
-    position:fixed; right:12px; bottom:12px; z-index:10;
-    width:220px; height:140px;
-    border-radius:14px; overflow:hidden;
-    background:rgba(0,0,0,.35);
-    border:1px solid rgba(255,255,255,.15);
-    backdrop-filter: blur(6px);
-  }
-  #miniSvg{width:100%;height:100%;display:block;opacity:.95}
-  #viewRect{fill:none;stroke:#4cc;stroke-width:2;opacity:.9}
-
-  /* SVG “site” marker */
-  .site{cursor:pointer}
-  .site .pin{fill:#111;stroke:#fff;stroke-opacity:.5;stroke-width:2}
-  .site .core{fill:#ffd166}
-  .site.locked .core{fill:#888}
-  .site text{font: 12px system-ui; fill:#fff; paint-order: stroke; stroke:#000; stroke-width:3px; stroke-linejoin:round;}
-  .site:hover .pin{stroke-opacity:.9}
-  .selected .pin{stroke:#4cc;stroke-opacity:1}
-
-  /* Kis “faluközpont” ikon */
-  .hut{opacity:.9}
-</style>
+    #viewport{position:fixed;inset:0;display:grid;place-items:center;z-index:1;}
+    #frame{
+      width:min(94vw, 1280px);
+      height:min(84vh, 860px);
+      border-radius:22px;
+      overflow:hidden;
+      box-shadow:0 20px 60px rgba(0,0,0,.35);
+      background:linear-gradient(180deg,#6fb1ff 0%, #d8f0ff 40%, #cfe6ff 70%);
+      position:relative;
+      touch-action:none;
+    }
+    canvas{display:block;}
+  </style>
 </head>
 <body>
 
 <div id="hud">
-  <b>Era 0 – Kezdeti térkép (áttekintő)</b>
+  <b>Era 0 – Kezdeti térkép (smooth cartoon)</b>
   <div class="hint">
     • Zoom: egérgörgő / pinch<br>
-    • Mozgás: húzd a térképet (drag)<br>
-    • Fit: ⤢ gomb<br>
-    • Kattints egy helyszínre: kijelölés
+    • Mozgás: húzd az üres területet (drag)<br>
+    • Fit: vissza középre<br>
+    • Katt: telephely kijelölés (most még csak marker)
   </div>
 </div>
 
@@ -87,213 +65,494 @@
   <button class="btn" id="zoom-out">−</button>
   <button class="btn" id="zoom-in">+</button>
   <button class="btn" id="zoom-fit">⤢</button>
-</div>
-
-<div id="minimap">
-  <svg id="miniSvg" viewBox="0 0 2000 1300" aria-label="Minimap">
-    <!-- (Ugyanaz a háttér leegyszerűsítve) -->
-    <rect width="2000" height="1300" fill="#7fbf7f"/>
-    <path d="M -200 240 C 260 70, 650 320, 980 220 S 1900 240, 2200 380"
-          fill="none" stroke="#5fb6ff" stroke-width="160" stroke-linecap="round" opacity=".5"/>
-    <path d="M 0 700 C 500 630, 780 820, 1200 760 S 1800 840, 2100 760"
-          fill="none" stroke="#c2a26a" stroke-width="70" stroke-linecap="round" opacity=".65"/>
-    <rect id="viewRect" x="0" y="0" width="100" height="100"></rect>
-  </svg>
+  <span class="pill" id="cam-readout">x1.00</span>
 </div>
 
 <div id="viewport">
   <div id="frame">
-    <!-- A teljes “világ” nagyobb, mint a viewport -->
-    <div id="wrap">
-      <svg id="world" width="2000" height="1300" viewBox="0 0 2000 1300" aria-label="Era 0 map">
-        <defs>
-          <!-- Finom zaj a talajra -->
-          <filter id="noise">
-            <feTurbulence type="fractalNoise" baseFrequency=".8" numOctaves="2" stitchTiles="stitch" />
-            <feColorMatrix type="matrix" values="
-              1 0 0 0 0
-              0 1 0 0 0
-              0 0 1 0 0
-              0 0 0 .08 0" />
-          </filter>
-
-          <linearGradient id="grass" x1="0" x2="1">
-            <stop offset="0%" stop-color="#8fd18f"/>
-            <stop offset="100%" stop-color="#6bbd6b"/>
-          </linearGradient>
-
-          <linearGradient id="dirt" x1="0" x2="1">
-            <stop offset="0%" stop-color="#d6b57a"/>
-            <stop offset="100%" stop-color="#b88d55"/>
-          </linearGradient>
-        </defs>
-
-        <!-- Talaj -->
-        <rect width="2000" height="1300" fill="url(#grass)"/>
-        <rect width="2000" height="1300" filter="url(#noise)" opacity=".55"/>
-
-        <!-- Folyó -->
-        <path d="M -200 240 C 260 70, 650 320, 980 220 S 1900 240, 2200 380"
-              fill="none" stroke="#5fb6ff" stroke-width="170" stroke-linecap="round" opacity=".55"/>
-        <path d="M -200 240 C 260 70, 650 320, 980 220 S 1900 240, 2200 380"
-              fill="none" stroke="#bfeaff" stroke-width="120" stroke-linecap="round" opacity=".35"/>
-
-        <!-- Földutak (Era 0 jelleg) -->
-        <path d="M 0 700 C 500 630, 780 820, 1200 760 S 1800 840, 2100 760"
-              fill="none" stroke="url(#dirt)" stroke-width="90" stroke-linecap="round" opacity=".85"/>
-        <path d="M 620 1240 C 720 1020, 820 910, 980 820 C 1160 720, 1340 700, 1580 520"
-              fill="none" stroke="url(#dirt)" stroke-width="70" stroke-linecap="round" opacity=".8"/>
-        <path d="M 840 120 C 900 220, 950 310, 1000 420 C 1080 580, 1160 660, 1280 720"
-              fill="none" stroke="url(#dirt)" stroke-width="70" stroke-linecap="round" opacity=".75"/>
-
-        <!-- Mezők (parcellák) -->
-        <g opacity=".35">
-          <rect x="260" y="820" width="260" height="140" rx="18" fill="#f3e6b2"/>
-          <rect x="560" y="840" width="300" height="160" rx="18" fill="#f7d9a1"/>
-          <rect x="880" y="900" width="280" height="150" rx="18" fill="#f3e6b2"/>
-          <rect x="1220" y="880" width="330" height="170" rx="18" fill="#f7d9a1"/>
-        </g>
-
-        <!-- Erdő foltok -->
-        <g opacity=".40">
-          <ellipse cx="260" cy="420" rx="220" ry="160" fill="#2f7d2f"/>
-          <ellipse cx="1680" cy="980" rx="240" ry="170" fill="#2f7d2f"/>
-          <ellipse cx="1500" cy="240" rx="220" ry="150" fill="#2f7d2f"/>
-        </g>
-
-        <!-- Faluközpont (házikók) -->
-        <g class="hut" transform="translate(940 700)">
-          <circle cx="0" cy="0" r="72" fill="#000" opacity=".08"/>
-          <g transform="translate(-60 -40)">
-            <polygon points="0,40 40,10 80,40 80,90 0,90" fill="#5b3a1f"/>
-            <polygon points="0,40 40,0 80,40" fill="#8a4f2c"/>
-          </g>
-          <g transform="translate(20 -30)">
-            <polygon points="0,40 35,15 70,40 70,80 0,80" fill="#5b3a1f"/>
-            <polygon points="0,40 35,10 70,40" fill="#8a4f2c"/>
-          </g>
-        </g>
-
-        <!-- 8–10 unlock spot (most “rom/telephely” jelölők) -->
-        <g id="sites">
-          <!-- id, x,y, locked? -->
-          <g class="site locked" data-id="S1" transform="translate(780 740)">
-            <circle class="pin" r="22"></circle><circle class="core" r="10"></circle>
-            <text x="30" y="5">Telephely 1</text>
-          </g>
-          <g class="site locked" data-id="S2" transform="translate(1120 760)">
-            <circle class="pin" r="22"></circle><circle class="core" r="10"></circle>
-            <text x="30" y="5">Telephely 2</text>
-          </g>
-          <g class="site locked" data-id="S3" transform="translate(1460 560)">
-            <circle class="pin" r="22"></circle><circle class="core" r="10"></circle>
-            <text x="30" y="5">Telephely 3</text>
-          </g>
-          <g class="site locked" data-id="S4" transform="translate(520 1020)">
-            <circle class="pin" r="22"></circle><circle class="core" r="10"></circle>
-            <text x="30" y="5">Telephely 4</text>
-          </g>
-          <g class="site locked" data-id="S5" transform="translate(980 1040)">
-            <circle class="pin" r="22"></circle><circle class="core" r="10"></circle>
-            <text x="30" y="5">Telephely 5</text>
-          </g>
-          <g class="site locked" data-id="S6" transform="translate(1320 980)">
-            <circle class="pin" r="22"></circle><circle class="core" r="10"></circle>
-            <text x="30" y="5">Telephely 6</text>
-          </g>
-          <g class="site locked" data-id="S7" transform="translate(420 560)">
-            <circle class="pin" r="22"></circle><circle class="core" r="10"></circle>
-            <text x="30" y="5">Telephely 7</text>
-          </g>
-          <g class="site locked" data-id="S8" transform="translate(1240 360)">
-            <circle class="pin" r="22"></circle><circle class="core" r="10"></circle>
-            <text x="30" y="5">Telephely 8</text>
-          </g>
-          <g class="site locked" data-id="S9" transform="translate(1680 260)">
-            <circle class="pin" r="22"></circle><circle class="core" r="10"></circle>
-            <text x="30" y="5">Telephely 9</text>
-          </g>
-          <g class="site locked" data-id="S10" transform="translate(220 260)">
-            <circle class="pin" r="22"></circle><circle class="core" r="10"></circle>
-            <text x="30" y="5">Telephely 10</text>
-          </g>
-        </g>
-      </svg>
-    </div>
+    <canvas id="c"></canvas>
   </div>
 </div>
 
 <script>
-/* ===== Kamera (zoom + pan) ===== */
-const frame = document.getElementById('frame');
-const wrap  = document.getElementById('wrap');
-const world = document.getElementById('world');
-const sites = document.getElementById('sites');
-const viewRect = document.getElementById('viewRect');
+/* =========================
+   ERA 0 MAP – CANVAS RENDER
+   ========================= */
 
+const frame = document.getElementById('frame');
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+
+const camReadout = document.getElementById('cam-readout');
+
+const WORLD = { w: 2400, h: 1600 };
+
+/* ---------- Determinisztikus random (hogy stabil legyen a layout) ---------- */
+function mulberry32(seed){
+  return function(){
+    let t = seed += 0x6D2B79F5;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  }
+}
+const rng = mulberry32(1337);
+
+/* ---------- Kamera ---------- */
 const cam = {
   x: 0, y: 0, s: 1,
-  min: 0.55, max: 2.5,
-  dragging: false,
-  lastX: 0, lastY: 0,
-  worldW: 2000, worldH: 1300
+  min: 0.55, max: 2.6,
+  dragging:false,
+  lastX:0, lastY:0
 };
 
-function clamp(v,a,b){ return Math.max(a, Math.min(b,v)); }
+function resize(){
+  const dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+  canvas.width  = Math.floor(frame.clientWidth * dpr);
+  canvas.height = Math.floor(frame.clientHeight * dpr);
+  canvas.style.width  = frame.clientWidth + 'px';
+  canvas.style.height = frame.clientHeight + 'px';
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+}
+function clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }
 
-function applyCam(){
-  // clamp pan
+function clampCam(){
   const vw = frame.clientWidth, vh = frame.clientHeight;
-  const w  = cam.worldW * cam.s,  h = cam.worldH * cam.s;
+  const w = WORLD.w * cam.s, h = WORLD.h * cam.s;
 
-  if (w <= vw) cam.x = (vw - w)/2;
+  if (w <= vw) cam.x = (vw - w) / 2;
   else cam.x = clamp(cam.x, vw - w, 0);
 
-  if (h <= vh) cam.y = (vh - h)/2;
+  if (h <= vh) cam.y = (vh - h) / 2;
   else cam.y = clamp(cam.y, vh - h, 0);
-
-  wrap.style.transform = `translate(${cam.x}px, ${cam.y}px) scale(${cam.s})`;
-  updateMini();
 }
 
 function fit(){
   const vw = frame.clientWidth, vh = frame.clientHeight;
-  const s = Math.min(vw / cam.worldW, vh / cam.worldH) * 0.98;
+  const s = Math.min(vw / WORLD.w, vh / WORLD.h) * 0.98;
   cam.s = clamp(s, cam.min, cam.max);
-  cam.x = (vw - cam.worldW*cam.s)/2;
-  cam.y = (vh - cam.worldH*cam.s)/2;
-  applyCam();
+  cam.x = (vw - WORLD.w * cam.s) / 2;
+  cam.y = (vh - WORLD.h * cam.s) / 2;
+  clampCam();
+  camReadout.textContent = `x${cam.s.toFixed(2)}`;
 }
 
+function screenToWorld(px, py){
+  const wx = (px - cam.x) / cam.s;
+  const wy = (py - cam.y) / cam.s;
+  return {x:wx, y:wy};
+}
 function zoomAt(factor, cx, cy){
   const old = cam.s;
-  const next = clamp(old*factor, cam.min, cam.max);
+  const next = clamp(old * factor, cam.min, cam.max);
   if (next === old) return;
 
-  // világ koordináta a kurzor alatt
   const wx = (cx - cam.x) / old;
   const wy = (cy - cam.y) / old;
 
   cam.s = next;
-  cam.x = cx - wx*next;
-  cam.y = cy - wy*next;
-  applyCam();
+  cam.x = cx - wx * next;
+  cam.y = cy - wy * next;
+
+  clampCam();
+  camReadout.textContent = `x${cam.s.toFixed(2)}`;
 }
 
-/* Drag csak akkor induljon, ha nem site-on nyomtál */
+/* ---------- Map elemek (Era 0 layout) ---------- */
+
+/* 8–10 telephely (később gyár/rom) */
+const sites = [
+  {id:'S1', name:'Telephely 1', x: 860, y: 820},
+  {id:'S2', name:'Telephely 2', x: 1120, y: 860},
+  {id:'S3', name:'Telephely 3', x: 1520, y: 620},
+  {id:'S4', name:'Telephely 4', x: 520, y: 1120},
+  {id:'S5', name:'Telephely 5', x: 980, y: 1140},
+  {id:'S6', name:'Telephely 6', x: 1380, y: 1120},
+  {id:'S7', name:'Telephely 7', x: 460, y: 620},
+  {id:'S8', name:'Telephely 8', x: 1280, y: 380},
+  {id:'S9', name:'Telephely 9', x: 1760, y: 280},
+  {id:'S10', name:'Telephely 10', x: 260, y: 300},
+];
+let selectedSite = null;
+
+/* Fák – sok, de olvashatóan (jitterelt) */
+const trees = [];
+function addForestEllipse(cx, cy, rx, ry, count){
+  for(let i=0;i<count;i++){
+    const a = rng()*Math.PI*2;
+    const r = Math.sqrt(rng());
+    const x = cx + Math.cos(a) * rx * r + (rng()-0.5)*22;
+    const y = cy + Math.sin(a) * ry * r + (rng()-0.5)*22;
+    const s = 0.8 + rng()*0.9;
+    trees.push({x,y,s});
+  }
+}
+addForestEllipse(340, 520, 300, 220, 120);
+addForestEllipse(1880, 1040, 320, 240, 130);
+addForestEllipse(1620, 300, 300, 210, 110);
+
+/* Külön “szórt” fák a mezők köré */
+for(let i=0;i<140;i++){
+  trees.push({x: rng()*WORLD.w, y: 0.55*WORLD.h + rng()*0.45*WORLD.h, s: 0.55 + rng()*0.85});
+}
+
+/* Felhők (lassú anim) */
+const clouds = [];
+for(let i=0;i<10;i++){
+  clouds.push({
+    x: rng()*WORLD.w,
+    y: 60 + rng()*260,
+    s: 0.7 + rng()*1.2,
+    v: 8 + rng()*18
+  });
+}
+
+/* ---------- Rajzoló segédek (cartoon look) ---------- */
+function roundRect(x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);
+  ctx.arcTo(x+w,y,x+w,y+h,r);
+  ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r);
+  ctx.arcTo(x,y,x+w,y,r);
+  ctx.closePath();
+}
+
+function drawGrass(){
+  // base
+  const g = ctx.createLinearGradient(0,0,WORLD.w,WORLD.h);
+  g.addColorStop(0,'#86d686');
+  g.addColorStop(1,'#63b963');
+  ctx.fillStyle = g;
+  ctx.fillRect(0,0,WORLD.w,WORLD.h);
+
+  // subtle dots for texture
+  ctx.globalAlpha = 0.12;
+  ctx.fillStyle = '#1a5a1a';
+  for(let i=0;i<2500;i++){
+    const x = rng()*WORLD.w;
+    const y = rng()*WORLD.h;
+    ctx.fillRect(x,y,1,1);
+  }
+  ctx.globalAlpha = 1;
+}
+
+function drawRiver(){
+  // River body as thick stroke then filled by clipping for cartoon edges
+  ctx.save();
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+
+  // Outer bank (darker)
+  ctx.strokeStyle = 'rgba(30,70,120,.28)';
+  ctx.lineWidth = 220;
+  ctx.beginPath();
+  ctx.moveTo(-200, 280);
+  ctx.bezierCurveTo(320, 70, 760, 360, 1120, 240);
+  ctx.bezierCurveTo(1480, 120, 1960, 240, 2600, 420);
+  ctx.stroke();
+
+  // Inner water
+  const w = ctx.createLinearGradient(0,0,0,500);
+  w.addColorStop(0,'#4aa8ff');
+  w.addColorStop(1,'#2f7bd6');
+  ctx.strokeStyle = w;
+  ctx.lineWidth = 170;
+  ctx.beginPath();
+  ctx.moveTo(-200, 280);
+  ctx.bezierCurveTo(320, 70, 760, 360, 1120, 240);
+  ctx.bezierCurveTo(1480, 120, 1960, 240, 2600, 420);
+  ctx.stroke();
+
+  // Highlight
+  ctx.strokeStyle = 'rgba(200,245,255,.25)';
+  ctx.lineWidth = 110;
+  ctx.beginPath();
+  ctx.moveTo(-200, 270);
+  ctx.bezierCurveTo(320, 60, 760, 350, 1120, 230);
+  ctx.bezierCurveTo(1480, 110, 1960, 230, 2600, 410);
+  ctx.stroke();
+
+  ctx.restore();
+}
+
+function drawPaths(){
+  ctx.save();
+  ctx.lineCap='round';
+  ctx.lineJoin='round';
+
+  // Path shadow (depth)
+  ctx.strokeStyle = 'rgba(0,0,0,.18)';
+  ctx.lineWidth = 118;
+  ctx.beginPath();
+  ctx.moveTo(0, 760);
+  ctx.bezierCurveTo(520, 650, 820, 910, 1260, 820);
+  ctx.bezierCurveTo(1620, 740, 1900, 920, 2550, 820);
+  ctx.stroke();
+
+  // Main path
+  const dirt = ctx.createLinearGradient(0,700,2000,900);
+  dirt.addColorStop(0,'#e0c08a');
+  dirt.addColorStop(1,'#c49a60');
+  ctx.strokeStyle = dirt;
+  ctx.lineWidth = 100;
+  ctx.beginPath();
+  ctx.moveTo(0, 740);
+  ctx.bezierCurveTo(520, 640, 820, 890, 1260, 800);
+  ctx.bezierCurveTo(1620, 720, 1900, 900, 2550, 800);
+  ctx.stroke();
+
+  // Side path
+  ctx.strokeStyle='rgba(0,0,0,.16)';
+  ctx.lineWidth=92;
+  ctx.beginPath();
+  ctx.moveTo(700, 1420);
+  ctx.bezierCurveTo(800, 1120, 940, 980, 1120, 900);
+  ctx.bezierCurveTo(1340, 800, 1540, 780, 1720, 620);
+  ctx.stroke();
+
+  ctx.strokeStyle = '#d6b57a';
+  ctx.lineWidth=78;
+  ctx.beginPath();
+  ctx.moveTo(700, 1400);
+  ctx.bezierCurveTo(800, 1100, 940, 960, 1120, 880);
+  ctx.bezierCurveTo(1340, 780, 1540, 760, 1720, 600);
+  ctx.stroke();
+
+  // Bridge (simple plank)
+  ctx.fillStyle = '#7a5a3a';
+  roundRect(1020, 240, 180, 60, 18);
+  ctx.fill();
+  ctx.globalAlpha=.22;
+  ctx.fillStyle='#000';
+  roundRect(1020, 240, 180, 60, 18);
+  ctx.fill();
+  ctx.globalAlpha=1;
+
+  ctx.restore();
+}
+
+function drawFields(){
+  ctx.save();
+  ctx.globalAlpha=.42;
+
+  function field(x,y,w,h,color,rot){
+    ctx.save();
+    ctx.translate(x+w/2, y+h/2);
+    ctx.rotate(rot);
+    ctx.translate(-w/2, -h/2);
+    ctx.fillStyle=color;
+    roundRect(0,0,w,h,18);
+    ctx.fill();
+    ctx.globalAlpha=.10;
+    ctx.strokeStyle='#000';
+    ctx.lineWidth=3;
+    ctx.stroke();
+    ctx.globalAlpha=.42;
+    ctx.restore();
+  }
+
+  field(320, 900, 320, 170, '#f3e6b2', -0.03);
+  field(680, 930, 360, 190, '#f7d9a1', 0.02);
+  field(1080, 980, 320, 170, '#f3e6b2', -0.015);
+  field(1450, 950, 380, 200, '#f7d9a1', 0.01);
+
+  ctx.restore();
+}
+
+function drawTree(t){
+  const x=t.x, y=t.y, s=t.s;
+
+  // shadow
+  ctx.globalAlpha = 0.22;
+  ctx.fillStyle = '#000';
+  ctx.beginPath();
+  ctx.ellipse(x+10*s, y+18*s, 22*s, 10*s, 0, 0, Math.PI*2);
+  ctx.fill();
+  ctx.globalAlpha = 1;
+
+  // trunk
+  ctx.fillStyle = '#6a3f22';
+  roundRect(x-6*s, y+6*s, 12*s, 22*s, 4*s);
+  ctx.fill();
+
+  // canopy gradient
+  const g = ctx.createRadialGradient(x-10*s,y-10*s, 6*s, x,y, 34*s);
+  g.addColorStop(0, '#4be04b');
+  g.addColorStop(1, '#1f8e1f');
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  ctx.arc(x, y, 32*s, 0, Math.PI*2);
+  ctx.fill();
+
+  // highlight blob
+  ctx.globalAlpha = 0.18;
+  ctx.fillStyle = '#fff';
+  ctx.beginPath();
+  ctx.arc(x-10*s, y-12*s, 14*s, 0, Math.PI*2);
+  ctx.fill();
+  ctx.globalAlpha = 1;
+}
+
+function drawVillage(){
+  // Well + 3 huts around
+  const cx=1040, cy=820;
+
+  // base shadow
+  ctx.globalAlpha=.12;
+  ctx.fillStyle='#000';
+  ctx.beginPath();
+  ctx.ellipse(cx, cy+42, 120, 50, 0, 0, Math.PI*2);
+  ctx.fill();
+  ctx.globalAlpha=1;
+
+  // well
+  ctx.fillStyle='#3aa0ff';
+  roundRect(cx-34, cy-22, 68, 44, 14);
+  ctx.fill();
+  ctx.globalAlpha=.18;
+  ctx.fillStyle='#fff';
+  roundRect(cx-34, cy-22, 68, 44, 14);
+  ctx.fill();
+  ctx.globalAlpha=1;
+
+  function hut(x,y,scale){
+    // shadow
+    ctx.globalAlpha=.18;
+    ctx.fillStyle='#000';
+    ctx.beginPath();
+    ctx.ellipse(x+18*scale,y+40*scale, 56*scale, 18*scale, 0, 0, Math.PI*2);
+    ctx.fill();
+    ctx.globalAlpha=1;
+
+    // body
+    ctx.fillStyle='#8b5a2b';
+    roundRect(x-40*scale, y, 80*scale, 70*scale, 10*scale);
+    ctx.fill();
+
+    // roof
+    ctx.fillStyle='#b3472a';
+    ctx.beginPath();
+    ctx.moveTo(x-54*scale, y+6*scale);
+    ctx.lineTo(x, y-44*scale);
+    ctx.lineTo(x+54*scale, y+6*scale);
+    ctx.closePath();
+    ctx.fill();
+
+    // door
+    ctx.fillStyle='#4a2a12';
+    roundRect(x-12*scale, y+28*scale, 24*scale, 40*scale, 8*scale);
+    ctx.fill();
+
+    // window
+    ctx.globalAlpha=.35;
+    ctx.fillStyle='#fff';
+    roundRect(x+18*scale, y+20*scale, 18*scale, 14*scale, 4*scale);
+    ctx.fill();
+    ctx.globalAlpha=1;
+  }
+
+  hut(cx-180, cy+30, 1.0);
+  hut(cx+220, cy+10, 1.05);
+  hut(cx+40,  cy+190, 0.95);
+}
+
+function drawSites(){
+  for(const s of sites){
+    const r = 20;
+
+    // shadow
+    ctx.globalAlpha = 0.25;
+    ctx.fillStyle='#000';
+    ctx.beginPath();
+    ctx.arc(s.x+8, s.y+10, r, 0, Math.PI*2);
+    ctx.fill();
+    ctx.globalAlpha=1;
+
+    // pin
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = (selectedSite===s.id) ? '#4cc' : 'rgba(255,255,255,.45)';
+    ctx.fillStyle = '#1a1a1a';
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, r, 0, Math.PI*2);
+    ctx.fill();
+    ctx.stroke();
+
+    // core
+    ctx.fillStyle = '#ffd166';
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, 8, 0, Math.PI*2);
+    ctx.fill();
+
+    // label (stroke text style)
+    ctx.font = '14px system-ui';
+    ctx.lineWidth = 5;
+    ctx.strokeStyle = 'rgba(0,0,0,.6)';
+    ctx.fillStyle = '#fff';
+    const label = s.name;
+    ctx.strokeText(label, s.x + 30, s.y + 6);
+    ctx.fillText(label, s.x + 30, s.y + 6);
+  }
+}
+
+function drawCloud(cl){
+  const x=cl.x, y=cl.y, s=cl.s;
+  ctx.save();
+  ctx.globalAlpha = 0.55;
+  ctx.fillStyle = '#fff';
+  ctx.beginPath();
+  ctx.arc(x, y, 36*s, 0, Math.PI*2);
+  ctx.arc(x+38*s, y+6*s, 44*s, 0, Math.PI*2);
+  ctx.arc(x+86*s, y, 34*s, 0, Math.PI*2);
+  ctx.arc(x+46*s, y+24*s, 46*s, 0, Math.PI*2);
+  ctx.closePath();
+  ctx.fill();
+  ctx.globalAlpha = 0.18;
+  ctx.fillStyle = '#dff4ff';
+  ctx.fill();
+  ctx.restore();
+}
+
+/* ---------- Interakció: site kiválasztás + drag pan ---------- */
+function hitTestSite(wx, wy){
+  for(const s of sites){
+    const dx = wx - s.x;
+    const dy = wy - s.y;
+    if (dx*dx + dy*dy <= 22*22) return s;
+  }
+  return null;
+}
+
 frame.addEventListener('mousedown', (e)=>{
-  const isSite = e.target.closest && e.target.closest('.site');
-  if (isSite) return;
-  cam.dragging = true;
-  cam.lastX = e.clientX; cam.lastY = e.clientY;
+  // csak bal gomb
+  if (e.button !== 0) return;
+
+  const rect = frame.getBoundingClientRect();
+  const sx = e.clientX - rect.left;
+  const sy = e.clientY - rect.top;
+  const w = screenToWorld(sx, sy);
+  const hit = hitTestSite(w.x, w.y);
+
+  if (hit){
+    selectedSite = hit.id;
+    // nem indul drag
+    return;
+  }
+
+  cam.dragging=true;
+  cam.lastX=e.clientX;
+  cam.lastY=e.clientY;
 });
+
 window.addEventListener('mousemove', (e)=>{
-  if (!cam.dragging) return;
+  if(!cam.dragging) return;
   cam.x += (e.clientX - cam.lastX);
   cam.y += (e.clientY - cam.lastY);
-  cam.lastX = e.clientX; cam.lastY = e.clientY;
-  applyCam();
+  cam.lastX = e.clientX;
+  cam.lastY = e.clientY;
+  clampCam();
 });
+
 window.addEventListener('mouseup', ()=> cam.dragging=false);
 
 frame.addEventListener('wheel', (e)=>{
@@ -304,26 +563,34 @@ frame.addEventListener('wheel', (e)=>{
   zoomAt(e.deltaY < 0 ? 1.12 : 0.89, cx, cy);
 },{passive:false});
 
-/* Touch pinch/drag */
-let mode=null;
+/* Touch: drag + pinch */
+let touchMode=null;
 let pinch={dist:0, s:1, midX:0, midY:0};
 
-function dist(a,b){ return Math.hypot(a.clientX-b.clientX, a.clientY-b.clientY); }
-function mid(a,b){ return {x:(a.clientX+b.clientX)/2, y:(a.clientY+b.clientY)/2}; }
+function td(a,b){ return Math.hypot(a.clientX-b.clientX, a.clientY-b.clientY); }
+function tm(a,b){ return {x:(a.clientX+b.clientX)/2, y:(a.clientY+b.clientY)/2}; }
 
 frame.addEventListener('touchstart', (e)=>{
+  const rect = frame.getBoundingClientRect();
+
   if (e.touches.length===1){
-    mode='drag';
+    const sx = e.touches[0].clientX - rect.left;
+    const sy = e.touches[0].clientY - rect.top;
+    const w = screenToWorld(sx, sy);
+    const hit = hitTestSite(w.x, w.y);
+    if (hit){ selectedSite = hit.id; return; }
+
+    touchMode='drag';
     cam.dragging=true;
-    cam.lastX=e.touches[0].clientX; cam.lastY=e.touches[0].clientY;
+    cam.lastX=e.touches[0].clientX;
+    cam.lastY=e.touches[0].clientY;
   } else if (e.touches.length===2){
-    mode='pinch';
+    touchMode='pinch';
     cam.dragging=false;
     const a=e.touches[0], b=e.touches[1];
-    pinch.dist = dist(a,b);
-    pinch.s = cam.s;
-    const m=mid(a,b);
-    const rect=frame.getBoundingClientRect();
+    pinch.dist=td(a,b);
+    pinch.s=cam.s;
+    const m=tm(a,b);
     pinch.midX = m.x - rect.left;
     pinch.midY = m.y - rect.top;
   }
@@ -331,62 +598,86 @@ frame.addEventListener('touchstart', (e)=>{
 
 frame.addEventListener('touchmove', (e)=>{
   e.preventDefault();
-  if (mode==='drag' && e.touches.length===1 && cam.dragging){
-    cam.x += e.touches[0].clientX - cam.lastX;
-    cam.y += e.touches[0].clientY - cam.lastY;
+  if (touchMode==='drag' && e.touches.length===1 && cam.dragging){
+    cam.x += (e.touches[0].clientX - cam.lastX);
+    cam.y += (e.touches[0].clientY - cam.lastY);
     cam.lastX = e.touches[0].clientX;
     cam.lastY = e.touches[0].clientY;
-    applyCam();
-  } else if (mode==='pinch' && e.touches.length===2){
+    clampCam();
+  } else if (touchMode==='pinch' && e.touches.length===2){
     const a=e.touches[0], b=e.touches[1];
-    const d=dist(a,b);
+    const d=td(a,b);
     const factor=d/pinch.dist;
     const target=clamp(pinch.s*factor, cam.min, cam.max);
+
     const cx=pinch.midX, cy=pinch.midY;
     const old=cam.s;
     const wx=(cx-cam.x)/old, wy=(cy-cam.y)/old;
     cam.s=target;
     cam.x=cx-wx*target;
     cam.y=cy-wy*target;
-    applyCam();
+    clampCam();
+    camReadout.textContent = `x${cam.s.toFixed(2)}`;
   }
 },{passive:false});
 
-frame.addEventListener('touchend', ()=>{ mode=null; cam.dragging=false; });
+frame.addEventListener('touchend', ()=>{ touchMode=null; cam.dragging=false; });
 
-/* Site kiválasztás */
-let selected=null;
-sites.querySelectorAll('.site').forEach(node=>{
-  node.addEventListener('click', ()=>{
-    sites.querySelectorAll('.site').forEach(n=>n.classList.remove('selected'));
-    node.classList.add('selected');
-    selected = node.dataset.id;
-    // később itt nyitjuk majd meg a “build/reno” panelt
-    console.log('Selected site:', selected);
-  });
-});
-
-/* Mini-map viewport rect frissítés */
-function updateMini(){
-  const vw = frame.clientWidth, vh = frame.clientHeight;
-  const x = (-cam.x)/cam.s;
-  const y = (-cam.y)/cam.s;
-  const w = vw/cam.s;
-  const h = vh/cam.s;
-  viewRect.setAttribute('x', x);
-  viewRect.setAttribute('y', y);
-  viewRect.setAttribute('width', w);
-  viewRect.setAttribute('height', h);
-}
-
-/* UI gombok */
+/* Kamera UI */
 document.getElementById('zoom-in').onclick  = ()=> zoomAt(1.15, frame.clientWidth/2, frame.clientHeight/2);
 document.getElementById('zoom-out').onclick = ()=> zoomAt(0.87, frame.clientWidth/2, frame.clientHeight/2);
 document.getElementById('zoom-fit').onclick = ()=> fit();
 
-window.addEventListener('resize', ()=> fit());
+/* ---------- Render loop ---------- */
+let last = performance.now();
+function render(t){
+  const dt = (t - last) / 1000;
+  last = t;
+
+  // cloud drift (world coords)
+  for(const cl of clouds){
+    cl.x += cl.v * dt;
+    if (cl.x > WORLD.w + 200) cl.x = -200;
+  }
+
+  // clear screen
+  ctx.clearRect(0,0,frame.clientWidth, frame.clientHeight);
+
+  // camera transform
+  ctx.save();
+  ctx.translate(cam.x, cam.y);
+  ctx.scale(cam.s, cam.s);
+
+  // layers
+  drawGrass();
+  drawRiver();
+  drawPaths();
+  drawFields();
+
+  // trees
+  // sort by y for nicer overlap
+  trees.sort((a,b)=>a.y-b.y);
+  for(const tr of trees) drawTree(tr);
+
+  drawVillage();
+  drawSites();
+
+  // clouds should be above but still in world; draw last
+  for(const cl of clouds) drawCloud(cl);
+
+  ctx.restore();
+
+  requestAnimationFrame(render);
+}
+
+window.addEventListener('resize', ()=>{
+  resize();
+  fit();
+});
+
+resize();
 fit();
+requestAnimationFrame(render);
 </script>
 </body>
 </html>
-``
