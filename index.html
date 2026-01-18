@@ -2,63 +2,120 @@
 <!DOCTYPE html>
 <html lang="hu">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Infinity Tycoon – Város</title>
-  <style>
-    :root{
-      --city-w: 12; --city-h: 8; --tile: 72px;
-      --ui-bg: rgba(18,18,18,.92);
-      --ui-fg: #fff; --ui-acc: #38f; --ui-ok: #1a5; --ui-warn:#b53;
-    }
-    html,body{height:100%; margin:0; background:#0e1726; color:#fff; font:14px/1.4 system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans", Arial, sans-serif;}
-    #city{position:fixed; inset:0; display:grid; place-items:center; z-index:1;
-      background: linear-gradient(180deg,#6fb1ff,#e4f1ff 40%,#c9e7ff 70%);
-    }
-    #city-grid{
-      display:grid; grid-template-columns:repeat(var(--city-w), var(--tile));
-      grid-template-rows:repeat(var(--city-h), var(--tile)); gap:6px; padding:14px;
-      border-radius:18px; background:rgba(255,255,255,.45);
-      box-shadow:0 20px 60px rgba(0,0,0,.25); backdrop-filter: blur(8px);
-    }
-    .tile{ width:var(--tile); height:var(--tile); position:relative; border-radius:14px; overflow:hidden; box-shadow: inset 0 0 0 1px rgba(0,0,0,.08); user-select:none; cursor:pointer; }
-    .road{ background: linear-gradient(90deg, transparent 47%, #eee 47%, #eee 53%, transparent 53%), #2d2d2d; }
-    .lot{ background: radial-gradient(20% 20% at 20% 30%, rgba(0,0,0,.08), transparent 60%), repeating-linear-gradient(45deg, #a7dba7 0 8px, #9ad19a 8px 16px); }
-    .road.cross::after{ content:""; position:absolute; inset:10% 10%; background: repeating-linear-gradient(90deg, #eee 0 8px, transparent 8px 16px), repeating-linear-gradient(0deg, #eee 0 8px, transparent 8px 16px); mix-blend-mode:screen; opacity:.2; }
-    .tile.sel{ outline:3px solid #4cc; }
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Infinity Tycoon – Város</title>
+<style>
+  :root{
+    --city-w: 12; --city-h: 8; --tile: 76px;
+    --ui-bg: rgba(22,22,28,.92); --ui-fg:#fff;
+    --road:#2a2a2f; --line:#e9e9ea; --grass1:#a7dba7; --grass2:#96d196;
+  }
+  html,body{height:100%;margin:0;background:#0f1420;color:#fff;
+    font:14px/1.4 system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans",Arial,sans-serif;}
+  /* Sima város hátterek (sziluettek) */
+  body::before{
+    content:"";position:fixed;inset:0;z-index:-3;
+    background:
+      radial-gradient(1200px 500px at 80% -10%, #6fb1ff55, transparent 60%),
+      linear-gradient(180deg,#6fb1ff,#e4f1ff 45%,#cfe6ff 70%);
+  }
+  body::after{
+    content:"";position:fixed;left:0;right:0;bottom:0;height:40%;
+    z-index:-2; opacity:.22;
+    background:
+      linear-gradient( to right,
+        transparent 0 5%, #222 5% 6%, transparent 6% 9%, #222 9% 10%, transparent 10% 15%,
+        #222 15% 16%, transparent 16% 18%, #222 18% 19%, transparent 19% 23%, #222 23% 24%, transparent 24% 29%,
+        #222 29% 30%, transparent 30% 33%, #222 33% 34%, transparent 34% 38%, #222 38% 39%, transparent 39% 45%
+      ),
+      linear-gradient(180deg, #1b2130 0%, #0f1420 65%);
+  }
 
-    /* HUD */
-    #hud{ position:fixed; left:12px; top:12px; z-index:3; background:var(--ui-bg); color:var(--ui-fg); padding:8px 10px; border-radius:12px; display:flex; gap:16px; align-items:center; }
-    #hud b{font-weight:700}
-    #hud .sep{opacity:.35}
+  /* HUD */
+  #hud{position:fixed;left:12px;top:12px;z-index:5;background:var(--ui-bg);color:var(--ui-fg);
+    padding:8px 12px;border-radius:12px;display:flex;gap:14px;align-items:center}
+  #hud b{font-weight:700} .sep{opacity:.35}
 
-    /* Quick menu */
-    #menu{ position:fixed; right:12px; top:12px; z-index:3; background:var(--ui-bg); color:var(--ui-fg); padding:8px; border-radius:12px; display:flex; gap:6px; }
-    .btn{ padding:8px 10px; border:1px solid #444; border-radius:10px; background:#111; color:#fff; cursor:pointer; }
-    .btn:disabled{ opacity:.5; cursor:not-allowed; }
-    .btn.ok{ background:#124; border-color:#246; }
+  /* Menü + R&D */
+  #menu{position:fixed;right:12px;top:12px;z-index:5;display:flex;gap:6px}
+  .btn{padding:8px 10px;border:1px solid #454950;border-radius:10px;background:#0f1117;color:#fff;cursor:pointer}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+  #rnd{position:fixed;right:12px;top:56px;z-index:5;background:var(--ui-bg);padding:10px;border-radius:12px;min-width:280px;display:none}
+  #rnd h3{margin:.2rem 0 .4rem;font-size:14px}
+  .upg-row{display:grid;grid-template-columns:1fr auto;gap:6px;align-items:center;margin:6px 0;padding:6px;border:1px solid #343a; border-radius:10px;background:#0e1118}
 
-    /* Action bar */
-    #actions{ position:fixed; left:50%; bottom:16px; transform:translateX(-50%); display:flex; gap:8px; z-index:3; }
-    #actions .btn.build{ background:#1a4; border-color:#083; }
-    #actions .btn.upg{ background:#284; border-color:#173; }
-    #actions .btn.info{ background:#333; border-color:#444; }
+  /* City grid – letisztult burkolt utak + zöld */
+  #city{position:fixed;inset:0;display:grid;place-items:center;z-index:1;}
+  #city-grid{
+    display:grid;
+    grid-template-columns:repeat(var(--city-w), var(--tile));
+    grid-template-rows:repeat(var(--city-h), var(--tile));
+    gap:8px;padding:14px;border-radius:22px;background:rgba(255,255,255,.35);
+    box-shadow:0 20px 60px rgba(0,0,0,.25);backdrop-filter: blur(8px);
+  }
+  .tile{width:var(--tile);height:var(--tile);position:relative;border-radius:16px;overflow:hidden;user-select:none;cursor:pointer}
+  .lot{
+    background:
+      radial-gradient(18% 18% at 20% 30%, rgba(0,0,0,.08), transparent 60%),
+      linear-gradient(135deg, var(--grass1), var(--grass2));
+    box-shadow: inset 0 0 0 2px rgba(8,8,8,.07);
+  }
+  .road{
+    background:
+      linear-gradient(90deg, transparent 48%, var(--line) 48% 52%, transparent 52%),
+      var(--road);
+    box-shadow: inset 0 0 0 2px rgba(255,255,255,.04);
+  }
+  .road.cross::after{
+    content:""; position:absolute; inset:12% 12%;
+    background:
+      repeating-linear-gradient(90deg, var(--line) 0 8px, transparent 8px 16px),
+      repeating-linear-gradient(0deg,  var(--line) 0 8px, transparent 8px 16px);
+    opacity:.16; mix-blend-mode:screen;
+  }
+  .tile.sel{outline:3px solid #4cc}
 
-    /* Toast */
-    #toast{ position:fixed; bottom:16px; left:50%; transform:translateX(-50%); background:#222; color:#fff; padding:8px 12px; border-radius:8px; font-size:14px; z-index:4; opacity:0; transition:opacity .2s; }
+  /* Ruin (rom) vizuál */
+  .ruin{
+    position:absolute; inset:10%; border-radius:10px; background:linear-gradient(#3a3a3a,#1b1b1b); 
+    box-shadow: inset 0 -6px 0 rgba(255,255,255,.04), 0 6px 16px rgba(0,0,0,.35);
+    opacity:.8; display:grid; place-items:center;
+  }
+  .ruin::before{
+    content:"ROM"; font-weight:700; color:#ddd; background:#0008; padding:2px 8px; border-radius:999px;
+  }
+  .ruin.locked{filter:grayscale(0.9) brightness(0.7)}
+  .ruin.locked::after{
+    content:"ZÁROLVA"; position:absolute; bottom:6px; right:6px; font-size:11px; 
+    background:#222c; padding:2px 6px; border-radius:999px; color:#f6c;
+  }
 
-    /* Factory visual */
-    .factory{ position:absolute; inset:10%; border-radius:10px; padding:4px 6px; display:grid; align-content:end; gap:3px; pointer-events:none; background: linear-gradient(#333,#111); box-shadow: inset 0 -6px 0 rgba(255,255,255,.05), 0 6px 16px rgba(0,0,0,.35); }
-    .factory .roof{ height:10px; border-radius:4px 4px 2px 2px; background:linear-gradient(#b33,#822); box-shadow:0 2px 0 rgba(0,0,0,.25); }
-    .factory .body{ background: linear-gradient(90deg, rgba(255,255,255,.06) 0 10%, transparent 10% 20%, rgba(255,255,255,.06) 20% 30%, transparent 30% 40%, rgba(255,255,255,.06) 40% 50%, transparent 50% 60%, rgba(255,255,255,.06) 60% 70%, transparent 70% 80%, rgba(255,255,255,.06) 80% 90%), linear-gradient(#2a2a2a,#151515); border-radius:6px; height:65%; position:relative; }
-    .factory .chimneys{ position:absolute; left:6px; top:-12px; display:flex; gap:6px; }
-    .chimney{ width:8px; height:18px; background:#555; border-radius:2px; position:relative; }
-    .chimney::after{ content:""; position:absolute; left:50%; transform:translateX(-50%); top:-12px; width:10px; height:12px; border-radius:50%; background: radial-gradient(closest-side, rgba(255,255,255,.6), rgba(255,255,255,0)); animation: smoke 1.8s infinite ease-in; }
-    @keyframes smoke{ 0%{ transform: translate(-50%,0) scale(.7); opacity:.9; } 100%{ transform: translate(-50%,-18px) scale(1.2); opacity:0; } }
-    .badge{ position:absolute; right:6px; top:6px; background:#1a5; color:#fff; padding:2px 6px; border-radius:999px; font:12px/1.2 system-ui; box-shadow:0 1px 0 rgba(0,0,0,.4); }
+  /* Factory vizuál (szinttel egyre „menőbb”) */
+  .factory{position:absolute;inset:10%;border-radius:10px;padding:4px 6px;display:grid;align-content:end;gap:3px;pointer-events:none;background:linear-gradient(#333,#111);box-shadow:inset 0 -6px 0 rgba(255,255,255,.05),0 6px 16px rgba(0,0,0,.35)}
+  .factory .roof{height:10px;border-radius:4px 4px 2px 2px;background:linear-gradient(#b33,#822);box-shadow:0 2px 0 rgba(0,0,0,.25)}
+  .factory .body{background:
+      linear-gradient(90deg, rgba(255,255,255,.06) 0 10%, transparent 10% 20%, rgba(255,255,255,.06) 20% 30%, transparent 30% 40%, rgba(255,255,255,.06) 40% 50%, transparent 50% 60%, rgba(255,255,255,.06) 60% 70%, transparent 70% 80%, rgba(255,255,255,.06) 80% 90%),
+      linear-gradient(#2a2a2a,#151515); border-radius:6px;height:65%;position:relative}
+  .factory .chimneys{position:absolute;left:6px;top:-12px;display:flex;gap:6px}
+  .chimney{width:8px;height:18px;background:#666;border-radius:2px;position:relative}
+  .chimney::after{content:"";position:absolute;left:50%;transform:translateX(-50%);top:-12px;width:10px;height:12px;border-radius:50%;
+    background:radial-gradient(closest-side, rgba(255,255,255,.6), rgba(255,255,255,0));animation:smoke 1.8s infinite ease-in}
+  @keyframes smoke{0%{transform:translate(-50%,0) scale(.7);opacity:.9}100%{transform:translate(-50%,-18px) scale(1.2);opacity:0}}
+  .badge{position:absolute;right:6px;top:6px;background:#1a5;color:#fff;padding:2px 6px;border-radius:999px;font:12px/1.2 system-ui;box-shadow:0 1px 0 rgba(0,0,0,.4)}
+  .badge.type{left:6px;right:auto;background:#2680eb}
 
-    @media (max-width: 900px){ :root{ --tile: 56px; } #hud{left:8px; top:8px} #menu{right:8px; top:8px} }
-  </style>
+  /* Akciósáv */
+  #actions{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);display:flex;gap:8px;z-index:5}
+  #actions .btn.main{background:#1a4;border-color:#083}
+  #actions .btn.upg{background:#284;border-color:#173}
+  #actions .btn.info{background:#333;border-color:#444}
+
+  /* Toast */
+  #toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:#222;color:#fff;padding:8px 12px;border-radius:8px;font-size:14px;z-index:6;opacity:0;transition:opacity .2s}
+
+  @media (max-width:900px){ :root{--tile:62px} #hud{left:8px;top:8px} #menu{right:8px;top:8px} #rnd{right:8px;top:52px} }
+</style>
 </head>
 <body>
   <!-- HUD -->
@@ -68,206 +125,439 @@
     ⚙️ Termelés: <b id="hud-ips">0 /s</b>
     <span class="sep">|</span>
     🏅 Prestige: <b id="hud-prestige">0</b>
+    <span class="sep">|</span>
+    📈 Össz‑bevétel: <b id="hud-gross">0</b>
   </div>
 
-  <!-- Menü: mentés, betöltés, export, import, szünet, reset -->
+  <!-- Menü -->
   <div id="menu">
-    <button class="btn" id="btn-save" title="Mentés">💾</button>
-    <button class="btn" id="btn-load" title="Betöltés">⤾</button>
+    <button class="btn" id="btn-save"  title="Mentés">💾</button>
+    <button class="btn" id="btn-load"  title="Betöltés">⤾</button>
     <button class="btn" id="btn-export" title="Export">⤴︎</button>
     <button class="btn" id="btn-import" title="Import">⤵︎</button>
     <button class="btn" id="btn-pause" title="Szünet/Folytatás">⏯</button>
     <button class="btn" id="btn-reset" title="Reset">🗑</button>
+    <button class="btn" id="btn-rnd"   title="R&D (fejlesztések)">🧪 R&D</button>
   </div>
 
-  <!-- Város -->
-  <div id="city">
-    <div id="city-grid" aria-label="Városháló"></div>
+  <!-- R&D panel -->
+  <div id="rnd">
+    <h3>🧪 Kutatás & Fejlesztés</h3>
+    <div id="rnd-list"></div>
   </div>
+
+  <!-- City -->
+  <div id="city"><div id="city-grid" aria-label="Városháló"></div></div>
 
   <!-- Akciók -->
   <div id="actions" hidden>
-    <button class="btn build" id="act-build">Gyár építése</button>
-    <button class="btn upg"   id="act-upg">Fejlesztés</button>
-    <button class="btn info"  id="act-info">Infó</button>
+    <button class="btn main" id="act-reno">Renoválás</button>
+    <button class="btn upg"  id="act-upg">Fejlesztés (szint)</button>
+    <button class="btn info" id="act-info">Infó</button>
   </div>
 
   <div id="toast"></div>
 
-  <script>
-  // ======= Beállítások =======
-  const CITY_W = 12, CITY_H = 8;     // rács méret
-  const ROAD_ROWS = new Set([1, 4, 7]);
-  const ROAD_COLS = new Set([2, 6, 9]);
+<script>
+/*** ================ JÁTÉKMAG ================= ***/
 
-  const BUILD_COST  = 500;            // új gyár ára
-  const UPG_BASE    = 400;            // fejlesztés alap
-  const UPG_MUL     = 1.35;           // fejlesztés szorzó
-  const BASE_IPS_L1 = 1.5;            // 1. szint termelés
-  const LV_IPS_G    = 1.6;            // szintenkénti szorzó
+/* --------- Gyár-típusok (későbbi típus: OP-ebb tech) --------- */
+const TYPES = [
+  { key:'workshop', name:'Műhely',   baseIPS:1.2,   lvMul:1.50,
+    tech:[ // name, base cost, scale, multiplier per level
+      {k:'tools', name:'Szerszámkészlet', base:1_000,  scale:8,  mult:2},
+      {k:'auto',  name:'Automata asztal', base:2_500,  scale:10, mult:5},
+      {k:'lean',  name:'Lean folyamat',   base:5_000,  scale:12, mult:10},
+    ]},
+  { key:'foundry', name:'Öntöde',   baseIPS:12,    lvMul:1.55,
+    tech:[
+      {k:'heat',  name:'Hővisszanyerés', base:12_000, scale:9,  mult:5},
+      {k:'mold',  name:'Gyors mintázás', base:30_000, scale:11, mult:20},
+      {k:'bots',  name:'Önvez. targoncák', base:60_000, scale:12, mult:100},
+    ]},
+  { key:'bank',    name:'Bank',     baseIPS:120,   lvMul:1.60,
+    tech:[
+      {k:'fra',   name:'Frakcionált hozam', base:150_000, scale:9,  mult:10},
+      {k:'ai',    name:'AI kockázatkezelés', base:400_000, scale:11, mult:50},
+      {k:'defi',  name:'DeFi integráció',    base:800_000, scale:12, mult:200},
+    ]},
+  { key:'reactor', name:'Reaktor',  baseIPS:1_000, lvMul:1.65,
+    tech:[
+      {k:'fuel',  name:'Tüzelőanyag ciklus', base:2_0e6, scale:9,  mult:20},
+      {k:'mag',   name:'Mágneses palást',    base:6_0e6, scale:11, mult:100},
+      {k:'qpl',   name:'Kvantum plazma el.', base:1.2e7, scale:12, mult:500},
+    ]},
+  { key:'arc',     name:'Arkológia',baseIPS:8_000, lvMul:1.70,
+    tech:[
+      {k:'swarm', name:'Drónraj',            base:5e7,   scale:9,  mult:50},
+      {k:'syn',   name:'Szinergia-háló',     base:1.6e8, scale:11, mult:300},
+      {k:'meta',  name:'Metagyár-protokoll', base:4e8,   scale:12, mult:1500},
+    ]},
+];
 
-  const SAVE_KEY    = 'infinity-tycoon-city-save';
-  const SAVE_MS     = 10000;          // autosave 10s
+/* --------- Feloldási küszöbök és renov árak típusonként --------- */
+const UNLOCK_GROSS = [0, 5_000, 80_000, 1_200_000, 18_000_000];
+const RENO_COST    = [ 500,   6_000,  90_000,  1_300_000, 20_000_000 ];
 
-  // ======= Állapot =======
-  const state = {
-    money: 0,
-    prestige: 0,
-    city: { w: CITY_W, h: CITY_H, factories: [] }, // {x,y,level}
-    lastTick: Date.now(),
-    paused: false
-  };
+/* --------- Pálya: utak --------- */
+const CITY_W = 12, CITY_H = 8;
+const ROAD_ROWS = new Set([1, 4, 7]);
+const ROAD_COLS = new Set([2, 6, 9]);
 
-  // ======= Helper =======
-  const fmt = n => !isFinite(n) ? '∞' : (n < 1e6 ? Math.floor(n).toLocaleString('hu-HU') : (function(){ const u=['','K','M','B','T','Qa','Qi','Sx','Sp','Oc','No','De']; let i=0; while(n>=1000 && i<u.length-1){ n/=1000; i++; } return n.toFixed(2)+' '+u[i]; })());
-  const isRoad = (x,y)=> ROAD_ROWS.has(y) || ROAD_COLS.has(x);
-  const hasFactory = (x,y)=> state.city.factories.some(f=>f.x===x && f.y===y);
-  const getFactory = (x,y)=> state.city.factories.find(f=>f.x===x && f.y===y);
-  function ipsForLevel(lv){ return BASE_IPS_L1 * Math.pow(LV_IPS_G, lv-1) * (1 + state.prestige * 0.5); }
-  function upgradeCost(lv){ return Math.floor(UPG_BASE * Math.pow(UPG_MUL, lv-1)); }
-  function totalIPS(){ return state.city.factories.reduce((s,f)=> s + ipsForLevel(f.level), 0); }
+/* --------- Állapot --------- */
+const state = {
+  money: 0,
+  gross: 0,          // összes szerzett pénz (progress-hez)
+  prestige: 0,
+  paused: false,
+  city: { w: CITY_W, h: CITY_H, factories: [], ruins: [] }, // factories: {x,y,type,level}, ruins:{x,y,tier,unlocked}
+  tech: {},          // pl. tech['workshop']={tools:lv,auto:lv,...}
+  lastTick: Date.now()
+};
 
-  // ======= HUD =======
-  const elMoney = document.getElementById('hud-money');
-  const elIPS   = document.getElementById('hud-ips');
-  const elPrest = document.getElementById('hud-prestige');
-  function updateHUD(){ elMoney.textContent = fmt(state.money); elIPS.textContent = fmt(totalIPS())+' /s'; elPrest.textContent = state.prestige; }
+/* --------- Formázó --------- */
+const fmt = n => !isFinite(n) ? '∞' :
+  (n<1e6 ? Math.floor(n).toLocaleString('hu-HU') :
+  (()=>{const u=['','K','M','B','T','Qa','Qi','Sx','Sp','Oc','No','De'];let i=0;while(n>=1000&&i<u.length-1){n/=1000;i++;}return n.toFixed(2)+' '+u[i];})());
+const isRoad = (x,y)=> ROAD_ROWS.has(y) || ROAD_COLS.has(x);
 
-  // ======= Toast =======
-  const elToast = document.getElementById('toast');
-  function toast(msg){ elToast.textContent = msg; elToast.style.opacity='1'; clearTimeout(toast._t); toast._t=setTimeout(()=>{ elToast.style.opacity='0'; }, 1200); }
+/* --------- IPS számítás --------- */
+function techMultFor(typeKey){
+  const tConf = TYPES.find(t=>t.key===typeKey);
+  const lvMap = state.tech[typeKey]||{};
+  return tConf.tech.reduce((m,t)=> m*Math.pow(t.mult, lvMap[t.k]||0), 1);
+}
+function ipsForFactory(f){
+  const conf = TYPES[f.type];
+  return conf.baseIPS * Math.pow(conf.lvMul, f.level-1) * techMultFor(conf.key) * (1 + state.prestige*0.5);
+}
+function totalIPS(){ return state.city.factories.reduce((s,f)=> s + ipsForFactory(f), 0); }
 
-  // ======= Grid =======
-  const grid = document.getElementById('city-grid');
+/* --------- Seed: indulj 1 Műhellyel + körülötte romok --------- */
+function seedCity(){
+  const lots = [];
+  for(let y=0;y<CITY_H;y++) for(let x=0;x<CITY_W;x++) if(!isRoad(x,y)) lots.push({x,y});
+  // kezdő gyár (középtáj)
+  const start = {x:3,y:2}; // ügyelve: ne út
+  state.city.factories.push({x:start.x,y:start.y,type:0,level:1}); // Műhely L1
+
+  // Kijelölt rom helyek, növekvő tierrel
+  const ruinSpots = [
+    {x:5,y:2,tier:1},{x:8,y:2,tier:2},{x:10,y:3,tier:3},
+    {x:3,y:5,tier:1},{x:6,y:5,tier:2},{x:9,y:5,tier:3},{x:10,y:6,tier:4}
+  ].filter(p=>!isRoad(p.x,p.y));
+  state.city.ruins = ruinSpots.map(p=>({x:p.x,y:p.y,tier:p.tier,unlocked:false}));
+}
+
+/* --------- UI elemek --------- */
+const grid      = document.getElementById('city-grid');
+const elMoney   = document.getElementById('hud-money');
+const elGross   = document.getElementById('hud-gross');
+const elIPS     = document.getElementById('hud-ips');
+const elPrest   = document.getElementById('hud-prestige');
+const toastEl   = document.getElementById('toast');
+
+const actions   = document.getElementById('actions');
+const btnReno   = document.getElementById('act-reno');
+const btnUpg    = document.getElementById('act-upg');
+const btnInfo   = document.getElementById('act-info');
+
+const btnSave   = document.getElementById('btn-save');
+const btnLoad   = document.getElementById('btn-load');
+const btnExport = document.getElementById('btn-export');
+const btnImport = document.getElementById('btn-import');
+const btnReset  = document.getElementById('btn-reset');
+const btnPause  = document.getElementById('btn-pause');
+const btnRnd    = document.getElementById('btn-rnd');
+const rndPanel  = document.getElementById('rnd');
+const rndList   = document.getElementById('rnd-list');
+
+let selected = null;
+
+/* --------- HUD/Toast --------- */
+function updateHUD(){
+  elMoney.textContent = fmt(state.money);
+  elGross.textContent = fmt(state.gross);
+  elIPS.textContent   = fmt(totalIPS())+' /s';
+  elPrest.textContent = state.prestige;
+}
+function toast(msg){ toastEl.textContent=msg; toastEl.style.opacity='1'; clearTimeout(toast._t); toast._t=setTimeout(()=>toastEl.style.opacity='0',1200); }
+
+/* --------- Grid építés --------- */
+function buildGrid(){
   grid.style.setProperty('--city-w', CITY_W);
   grid.style.setProperty('--city-h', CITY_H);
-  let selected = null;
-
-  function buildGrid(){
-    grid.innerHTML = '';
-    for(let y=0;y<CITY_H;y++){
-      for(let x=0;x<CITY_W;x++){
-        const t=document.createElement('div');
-        t.className='tile '+(isRoad(x,y)?'road':'lot');
-        if(isRoad(x,y) && ROAD_ROWS.has(y) && ROAD_COLS.has(x)) t.classList.add('cross');
-        t.dataset.x=x; t.dataset.y=y;
-        t.addEventListener('click', onTileClick);
-        grid.appendChild(t);
-      }
+  grid.innerHTML = '';
+  for(let y=0;y<CITY_H;y++){
+    for(let x=0;x<CITY_W;x++){
+      const t = document.createElement('div');
+      t.className = 'tile ' + (isRoad(x,y)?'road':'lot');
+      if (isRoad(x,y) && ROAD_ROWS.has(y) && ROAD_COLS.has(x)) t.classList.add('cross');
+      t.dataset.x = x; t.dataset.y = y;
+      t.addEventListener('click', onTileClick);
+      grid.appendChild(t);
     }
-    renderFactories();
   }
+  renderAll();
+}
 
-  function factoryHTML(level){
-    const chimneys = Math.min(1+Math.floor((level-1)/2), 4);
-    const colorShift = Math.min(level-1, 6);
-    const roofGrad = `linear-gradient(#${['b33','b53','b73','b93','bb3','bd3','bf3'][colorShift]},#822)`;
-    const bodyShade = Math.min(40 + level*4, 80);
-    return `
-      <div class="factory">
-        <div class="roof" style="background:${roofGrad}"></div>
-        <div class="body" style="background:
-          linear-gradient(90deg, rgba(255,255,255,.06) 0 10%, transparent 10% 20%, rgba(255,255,255,.06) 20% 30%, transparent 30% 40%, rgba(255,255,255,.06) 40% 50%, transparent 50% 60%, rgba(255,255,255,.06) 60% 70%, transparent 70% 80%, rgba(255,255,255,.06) 80% 90%),
-          linear-gradient(#2a2a2a,#1${bodyShade}1${bodyShade})">
-          <div class="chimneys">${'<div class="chimney"></div>'.repeat(chimneys)}</div>
+/* --------- Render: gyár + rom --------- */
+function clearContent(){ for(const t of grid.children){ t.querySelectorAll('.factory,.ruin').forEach(e=>e.remove()); t.classList.remove('sel'); } }
+function factoryHTML(f){
+  const conf = TYPES[f.type];
+  const chimneys = Math.min(1+Math.floor((f.level-1)/2),4);
+  const colorShift = Math.min(f.level-1,6);
+  const roofGrad = `linear-gradient(#${['b33','b53','b73','b93','bb3','bd3','bf3'][colorShift]},#822)`;
+  const bodyShade = Math.min(40 + f.level*4, 80);
+  const typeBadge = `<div class="badge type">${conf.name}</div>`;
+  return `
+    <div class="factory">
+      ${typeBadge}
+      <div class="roof" style="background:${roofGrad}"></div>
+      <div class="body" style="background:
+        linear-gradient(90deg, rgba(255,255,255,.06) 0 10%, transparent 10% 20%, rgba(255,255,255,.06) 20% 30%, transparent 30% 40%, rgba(255,255,255,.06) 40% 50%, transparent 50% 60%, rgba(255,255,255,.06) 60% 70%, transparent 70% 80%, rgba(255,255,255,.06) 80% 90%),
+        linear-gradient(#2a2a2a,#1${bodyShade}1${bodyShade})">
+        <div class="chimneys">${'<div class="chimney"></div>'.repeat(chimneys)}</div>
+      </div>
+      <div class="badge">Lv ${f.level}</div>
+    </div>`;
+}
+function ruinHTML(r){
+  const cls = 'ruin' + (r.unlocked?'':' locked');
+  return `<div class="${cls}"></div>`;
+}
+function renderAll(){
+  clearContent();
+  // romok
+  for(const r of state.city.ruins){
+    const idx = r.y*CITY_W + r.x; const tile = grid.children[idx];
+    if (tile) tile.insertAdjacentHTML('beforeend', ruinHTML(r));
+  }
+  // gyárak
+  for(const f of state.city.factories){
+    const idx = f.y*CITY_W + f.x; const tile = grid.children[idx];
+    if (tile) tile.insertAdjacentHTML('beforeend', factoryHTML(f));
+  }
+  updateHUD();
+  renderRND();
+}
+
+/* --------- Kijelölés + akciók --------- */
+function findFactoryAt(x,y){ return state.city.factories.find(f=>f.x===x && f.y===y); }
+function findRuinAt(x,y){ return state.city.ruins.find(r=>r.x===x && r.y===y); }
+
+function onTileClick(e){
+  for(const t of grid.children) t.classList.remove('sel');
+  const t = e.currentTarget; t.classList.add('sel');
+  selected = { x:+t.dataset.x, y:+t.dataset.y };
+  const f = findFactoryAt(selected.x, selected.y);
+  const r = findRuinAt(selected.x, selected.y);
+
+  actions.hidden = false;
+  btnUpg.hidden = !f;
+  btnReno.hidden = !r;
+  btnInfo.hidden = !(f || r);
+
+  if (f){
+    const upgCost = levelUpCost(f);
+    btnUpg.disabled = state.money < upgCost;
+    btnUpg.textContent = `Fejlesztés → Lv ${f.level+1} (${fmt(upgCost)})`;
+  }
+  if (r){
+    const need = UNLOCK_GROSS[r.tier];
+    const unlocked = r.unlocked;
+    const cost = RENO_COST[r.tier];
+    btnReno.disabled = !(unlocked && state.money >= cost);
+    btnReno.textContent = unlocked ? `Renoválás (${fmt(cost)})` : `Zárolt – cél: ${fmt(need)} össz.`;
+  }
+}
+
+function levelUpCost(f){
+  // típusfüggő ár: nő a szinttel és a típus indexével
+  const base = 400 * Math.pow(1.25, f.level-1);
+  const typeMul = Math.pow(6, f.type); // későbbi típus drágább
+  return Math.floor(base * typeMul);
+}
+
+btnUpg.onclick = ()=>{
+  if (!selected) return;
+  const f = findFactoryAt(selected.x, selected.y);
+  if (!f) return;
+  const cost = levelUpCost(f);
+  if (state.money < cost) return;
+  state.money -= cost;
+  f.level++;
+  renderAll(); saveNow(false); toast('Fejlesztve');
+};
+
+btnReno.onclick = ()=>{
+  if (!selected) return;
+  const r = findRuinAt(selected.x, selected.y); if (!r || !r.unlocked) return;
+  const cost = RENO_COST[r.tier]; if (state.money < cost) return;
+  state.money -= cost;
+  // rom -> gyár (a tier típus indexe megegyezik)
+  state.city.ruins = state.city.ruins.filter(x=>!(x.x===r.x && x.y===r.y));
+  state.city.factories.push({x:r.x,y:r.y,type:r.tier,level:1});
+  renderAll(); saveNow(false); toast('Renoválva');
+};
+
+btnInfo.onclick = ()=>{
+  if (!selected) return;
+  const f = findFactoryAt(selected.x, selected.y);
+  const r = findRuinAt(selected.x, selected.y);
+  if (f){
+    const conf = TYPES[f.type];
+    alert(
+      `${conf.name}\n`+
+      `Szint: ${f.level}\n`+
+      `Termelés: ${ipsForFactory(f).toFixed(2)} /s\n`+
+      `Következő szint ára: ${fmt(levelUpCost(f))}`
+    );
+  }else if (r){
+    const name = TYPES[r.tier].name;
+    alert(
+      `Rom (${name})\n`+
+      `Feloldás: össz‑bevétel ≥ ${fmt(UNLOCK_GROSS[r.tier])}\n`+
+      `Renoválás ára: ${fmt(RENO_COST[r.tier])}`
+    );
+  }
+};
+
+/* --------- Feloldás ellenőrzés --------- */
+function checkUnlocks(){
+  for (const r of state.city.ruins){
+    if (!r.unlocked && state.gross >= UNLOCK_GROSS[r.tier]) {
+      r.unlocked = true;
+      // vizuális frissítés azonnal
+      const idx = r.y*CITY_W + r.x; const tile = grid.children[idx];
+      if (tile){ const el = tile.querySelector('.ruin'); if (el) el.classList.remove('locked'); }
+      toast(`${TYPES[r.tier].name} feloldva — renoválható!`);
+    }
+  }
+}
+
+/* --------- R&D (OP tech) --------- */
+function techLevel(typeKey, k){ return (state.tech[typeKey]?.[k]||0); }
+function techCost(typeKey, k){
+  const conf = TYPES.find(t=>t.key===typeKey);
+  const t = conf.tech.find(x=>x.k===k);
+  const lv = techLevel(typeKey,k);
+  return Math.floor(t.base * Math.pow(t.scale, lv));
+}
+function buyTech(typeKey,k){
+  const cost = techCost(typeKey,k);
+  if (state.money < cost) return;
+  state.money -= cost;
+  state.tech[typeKey] = state.tech[typeKey] || {};
+  state.tech[typeKey][k] = techLevel(typeKey,k) + 1;
+  renderAll(); saveNow(false); toast('Tech fejlesztés megvéve');
+}
+function hasAnyFactoryOfType(typeIdx){ return state.city.factories.some(f=>f.type===typeIdx); }
+function renderRND(){
+  const open = rndPanel.style.display!=='none';
+  if (!open) return;
+  rndList.innerHTML = '';
+  TYPES.forEach((t, idx)=>{
+    const enabled = hasAnyFactoryOfType(idx) || state.city.ruins.some(r=>r.tier===idx && r.unlocked);
+    if (!enabled) return; // csak ha már találtál belőle vagy feloldottad
+    const h = document.createElement('div');
+    h.innerHTML = `<h3>${t.name} – Tech</h3>`;
+    rndList.appendChild(h);
+    t.tech.forEach(tech=>{
+      const row = document.createElement('div'); row.className='upg-row';
+      const lv = techLevel(t.key, tech.k);
+      const cost = techCost(t.key, tech.k);
+      row.innerHTML = `
+        <div>
+          <b>${tech.name}</b><br/>
+          <small>Szint: ${lv} • Szorzó: ×${tech.mult}<span style="opacity:.7">/szint</span></small>
         </div>
-        <div class="badge">Lv ${level}</div>
-      </div>`;
-  }
+        <button class="btn" ${state.money<cost?'disabled':''}>Vétel (${fmt(cost)})</button>
+      `;
+      row.querySelector('button').onclick = ()=>buyTech(t.key, tech.k);
+      rndList.appendChild(row);
+    });
+  });
+}
 
-  function renderFactories(){
-    for(const t of grid.children){ t.querySelectorAll('.factory').forEach(e=>e.remove()); }
-    for(const f of state.city.factories){
-      const idx = f.y * CITY_W + f.x;
-      const tile = grid.children[idx];
-      if(tile) tile.insertAdjacentHTML('beforeend', factoryHTML(f.level));
-    }
-    updateHUD();
-  }
-
-  // ======= Akciók =======
-  const actBar   = document.getElementById('actions');
-  const btnBuild = document.getElementById('act-build');
-  const btnUpg   = document.getElementById('act-upg');
-  const btnInfo  = document.getElementById('act-info');
-
-  function onTileClick(e){
-    for(const t of grid.children) t.classList.remove('sel');
-    const t = e.currentTarget; t.classList.add('sel');
-    selected = { x:+t.dataset.x, y:+t.dataset.y };
-    const road = isRoad(selected.x, selected.y);
-    const f = getFactory(selected.x, selected.y);
-    actBar.hidden = false;
-    btnBuild.disabled = road || !!f || state.money < BUILD_COST;
-    btnUpg.disabled   = !f || state.money < upgradeCost(f.level);
-    btnInfo.disabled  = !f;
-    btnBuild.textContent = `Gyár építése (${fmt(BUILD_COST)})`;
-    if (f) btnUpg.textContent = `Fejlesztés → Lv ${f.level+1} (${fmt(upgradeCost(f.level))})`;
-  }
-
-  btnBuild.onclick = ()=>{
-    if(!selected) return; if(isRoad(selected.x, selected.y)) return; if(hasFactory(selected.x, selected.y)) return; if(state.money < BUILD_COST) return;
-    state.money -= BUILD_COST;
-    state.city.factories.push({x:selected.x, y:selected.y, level:1});
-    renderFactories(); updateHUD(); saveNow(false); toast('Gyár építve');
+/* --------- Mentés/Betöltés/Offline --------- */
+const SAVE_KEY='infty-city-v2';
+function gameGetState(){
+  return {
+    v:2,
+    money:state.money, gross:state.gross, prestige:state.prestige, paused:state.paused,
+    city: state.city, tech: state.tech, lastTick: Date.now()
   };
-  btnUpg.onclick = ()=>{
-    if(!selected) return; const f=getFactory(selected.x, selected.y); if(!f) return; const cost=upgradeCost(f.level); if(state.money < cost) return;
-    state.money -= cost; f.level++; renderFactories(); updateHUD(); saveNow(false); toast('Fejlesztve');
-  };
-  btnInfo.onclick = ()=>{
-    if(!selected) return; const f=getFactory(selected.x, selected.y); if(!f) return;
-    alert(`Gyár infó:\nKoordináta: (${f.x+1}, ${f.y+1})\nSzint: ${f.level}\nTermelés: ${ipsForLevel(f.level).toFixed(2)} /s\nKövetkező ár: ${fmt(upgradeCost(f.level))}`);
-  };
-
-  // ======= Mentés / Betöltés / Offline =======
-  function gameGetState(){
-    return { version:1, money:state.money, prestige:state.prestige, city:state.city, lastTick:Date.now() };
+}
+function gameSetState(s){
+  if (!s) return;
+  state.money = Number(s.money)||0;
+  state.gross = Number(s.gross)||0;
+  state.prestige = Number(s.prestige)||0;
+  state.paused = !!s.paused;
+  if (s.city){
+    state.city.factories = (s.city.factories||[]).map(f=>({x:f.x,y:f.y,type:f.type,level:f.level}));
+    state.city.ruins     = (s.city.ruins||[]).map(r=>({x:r.x,y:r.y,tier:r.tier,unlocked:!!r.unlocked}));
   }
-  function gameSetState(s){
-    if (!s) return;
-    state.money = Number(s.money)||0;
-    state.prestige = Number(s.prestige)||0;
-    if (s.city?.factories) state.city.factories = s.city.factories.map(f=>({x:f.x,y:f.y,level:f.level}));
-    renderFactories(); updateHUD();
+  state.tech = s.tech||{};
+  renderAll();
+}
+function gameApplyOffline(ms){
+  const gain = totalIPS() * (ms/1000);
+  state.money += gain; state.gross += gain;
+}
+function saveNow(show=true){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify(gameGetState())); if(show) toast('Mentve'); }catch(e){ console.error(e); toast('Mentés hiba'); } }
+function loadNow(){ try{ const raw=localStorage.getItem(SAVE_KEY); if(!raw){ toast('Nincs mentés'); return; } const s=JSON.parse(raw); const dt=Date.now()-(s.lastTick||Date.now()); gameSetState(s); if(dt>5000) gameApplyOffline(dt); toast('Betöltve'); }catch(e){ console.error(e); toast('Betöltés hiba'); } }
+function exportSave(){ try{ const b64=btoa(localStorage.getItem(SAVE_KEY)||''); navigator.clipboard?.writeText(b64); prompt('Másold ki a mentést:', b64); }catch(e){ toast('Export hiba'); } }
+function importSave(){ const b64=prompt('Illeszd be az exportált mentést:'); if(!b64) return; try{ const raw=atob(b64); localStorage.setItem(SAVE_KEY, raw); loadNow(); }catch(e){ toast('Import hiba'); } }
+function resetSave(){ if(!confirm('Biztos? Minden törlődik.')) return; localStorage.removeItem(SAVE_KEY); location.reload(); }
+
+/* --------- Loop --------- */
+let _last = performance.now();
+function loop(){
+  const now = performance.now(); const dt = (now-_last)/1000; _last=now;
+  if (!state.paused){
+    const inc = totalIPS() * dt;
+    state.money += inc; state.gross += inc;
+    checkUnlocks();
   }
-  function gameApplyOffline(ms){ state.money += totalIPS() * (ms/1000); }
+  updateHUD();
+  requestAnimationFrame(loop);
+}
 
-  function saveNow(show=true){ try{ const data=JSON.stringify(gameGetState()); localStorage.setItem(SAVE_KEY, data); if(show) toast('Mentve'); }catch(e){ console.error(e); toast('Mentés hiba'); } }
-  function loadNow(){ try{ const raw=localStorage.getItem(SAVE_KEY); if(!raw){ toast('Nincs mentés'); return; } const s=JSON.parse(raw); const dt=Date.now() - (s.lastTick||Date.now()); gameSetState(s); if (dt>5000) gameApplyOffline(dt); toast('Betöltve'); }catch(e){ console.error(e); toast('Betöltés hiba'); } }
-  function exportSave(){ try{ const b64=btoa(localStorage.getItem(SAVE_KEY) || ''); navigator.clipboard?.writeText(b64); prompt('Másold ki a mentést:', b64); }catch(e){ toast('Export hiba'); } }
-  function importSave(){ const b64=prompt('Illeszd be az exportált mentést:'); if(!b64) return; try{ const raw=atob(b64); localStorage.setItem(SAVE_KEY, raw); loadNow(); }catch(e){ toast('Import hiba'); } }
-  function resetSave(){ if(!confirm('Biztos? Minden törlődik.')) return; localStorage.removeItem(SAVE_KEY); location.reload(); }
-
-  // ======= Menügombok =======
-  document.getElementById('btn-save').onclick = ()=>saveNow(true);
-  document.getElementById('btn-load').onclick = ()=>loadNow();
-  document.getElementById('btn-export').onclick = ()=>exportSave();
-  document.getElementById('btn-import').onclick = ()=>importSave();
-  document.getElementById('btn-reset').onclick = ()=>resetSave();
-  document.getElementById('btn-pause').onclick = ()=>{ state.paused=!state.paused; toast(state.paused?'Szünet':'Folytatás'); };
-
-  // ======= Loop =======
-  let _last = performance.now();
-  function loop(){
-    const now = performance.now(); let dt = (now - _last)/1000; _last = now;
-    if (!state.paused){ state.money += totalIPS() * dt; }
-    updateHUD();
-    requestAnimationFrame(loop);
-  }
-
-  // ======= Init =======
-  function init(){
-    buildGrid(); updateHUD();
-    // betöltés + offline
+/* --------- Init --------- */
+function init(){
+  // ha nincs mentés -> seed
+  const raw = localStorage.getItem(SAVE_KEY);
+  if (raw){
     try{
-      const raw=localStorage.getItem(SAVE_KEY);
-      if(raw){ const s=JSON.parse(raw); const dt=Date.now() - (s.lastTick||Date.now()); gameSetState(s); if (dt>5000) gameApplyOffline(dt); }
-    }catch{}
-    setInterval(()=>saveNow(false), SAVE_MS);
-    requestAnimationFrame(loop);
+      const s=JSON.parse(raw);
+      gameSetState(s);
+      const dt=Date.now()-(s.lastTick||Date.now()); if (dt>5000) gameApplyOffline(dt);
+    }catch{ seedCity(); }
+  }else{
+    seedCity();
   }
-  init();
-  </script>
+  buildGrid();
+  updateHUD();
+  setInterval(()=>saveNow(false), 10_000);
+  requestAnimationFrame(loop);
+}
+
+/* --------- Események --------- */
+document.getElementById('btn-save').onclick   = ()=>saveNow(true);
+document.getElementById('btn-load').onclick   = ()=>loadNow();
+document.getElementById('btn-export').onclick = ()=>exportSave();
+document.getElementById('btn-import').onclick = ()=>importSave();
+document.getElementById('btn-reset').onclick  = ()=>resetSave();
+document.getElementById('btn-pause').onclick  = ()=>{ state.paused=!state.paused; toast(state.paused?'Szünet':'Folytatás'); };
+document.getElementById('btn-rnd').onclick    = ()=>{
+  const show = rndPanel.style.display!=='block';
+  rndPanel.style.display = show?'block':'none';
+  renderRND();
+};
+
+init();
+</script>
 </body>
 </html>
